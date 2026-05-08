@@ -78,7 +78,7 @@ export function playNookAnimaleseChar(char) {
 
     const t = c.currentTime;
     gain.gain.setValueAtTime(0, t);
-    gain.gain.linearRampToValueAtTime(0.05, t + 0.005);
+    gain.gain.linearRampToValueAtTime(0.04, t + 0.005); // -20% from 0.05
     gain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
 
     osc.connect(gain).connect(c.destination);

@@ -18,6 +18,7 @@ let lastPhase = null;
 let lastFlightIdx = null;
 let narratorMode = 'state'; // 'state' or 'quote'
 let currentQuote = '';
+let lastStateKey = null;     // re-animalese only when this changes
 
 async function init() {
   // If they detonated the site on a previous visit, Resetti has a word for
@@ -40,16 +41,17 @@ async function init() {
   setInterval(tick, TICK_MS);
 
   // Alternate the Tom Nook bubble between live status and famous quotes.
-  // The 1s tick still updates the bubble during the 'state' window.
+  // Both modes use Animalese; the next tick handles state mode by re-picking.
   setInterval(() => {
     narratorMode = narratorMode === 'state' ? 'quote' : 'state';
+    cancelAnimalese();
     if (narratorMode === 'quote') {
       currentQuote = randomNookQuote();
       const bubble = document.getElementById('nook-bubble');
       if (bubble) typeAnimalese(bubble, currentQuote);
     } else {
-      // Cancel the Animalese typewriter so the state line takes over cleanly.
-      cancelAnimalese();
+      // Force the next tick to re-pick & re-animalese a fresh state line.
+      lastStateKey = null;
     }
   }, NARRATOR_SWITCH_MS);
 }
@@ -60,10 +62,23 @@ function tick() {
   const state = computeState(now);
   const progress = computeJourneyProgress(now);
   const miles = computeMilesEarned(now);
-  const { hero, nook } = narrate(state);
+  const { hero, nookOptions } = narrate(state);
 
   setText('status-line', hero);
-  if (narratorMode === 'state') setText('nook-bubble', nook);
+
+  // State-mode bubble: type a fresh random line via Animalese only when we
+  // first enter state mode or the phase changes. Within the same phase we
+  // leave the bubble alone (countdown updates live in the hero line instead).
+  if (narratorMode === 'state') {
+    const key = `${state.phase}:${state.index ?? ''}`;
+    if (key !== lastStateKey) {
+      lastStateKey = key;
+      const line = nookOptions[Math.floor(Math.random() * nookOptions.length)];
+      const bubble = document.getElementById('nook-bubble');
+      if (bubble) typeAnimalese(bubble, line);
+    }
+  }
+
   setText('miles-count', miles);
 
   const fill = document.getElementById('progress-fill');

@@ -81,7 +81,7 @@ function typeWithAcedio(el, text, opts) {
 
   if (wave && wave.dataURI) {
     const audio = new Audio(wave.dataURI);
-    audio.volume = 0.5;
+    audio.volume = 0.4; // -20% from 0.5 — Nook a touch quieter
     duck();
     let released = false;
     const release = () => { if (!released) { released = true; unduck(); } };

@@ -20,6 +20,9 @@ export const NOOK_QUOTES = [
   'Did somebody say… in-flight furniture catalog, hooo?',
   'Cousin? Cousin! …oh wait, that\'s Timmy and Tommy, hm-hmm.',
   'I once flew economy. Once. We do not speak of it, yes yes.',
+  // ✨ The two amazing hilarious additions ✨
+  'Hm-hmm, did you know? The interest on your interest accrues interest, yes yes! It\'s loans all the way down, hooo!',
+  'Hooo! "Nook" is short for "Nookington," yes yes. …it is not. I made that up just now. But doesn\'t it sound expensive, hm-hmm?',
 ];
 
 export function randomNookQuote() {
@@ -27,58 +30,64 @@ export function randomNookQuote() {
 }
 
 // Map a state object (from flight-state.js) to:
-//   { hero: string, nook: string }
-// The hero line is the big one-liner. The nook line is what Tom Nook says.
+//   { hero: string, nookOptions: string[] }
+// The hero line is the big one-liner. nookOptions is a list of Tom Nook line
+// variants for the bubble — main.js picks one per state-mode entry so each
+// alternation back to state mode gets a fresh line.
 export function narrate(state) {
   switch (state.phase) {
     case 'pre-trip':
       return {
         hero: `Departure in ${formatCountdownLong(state.msUntilNext)}`,
-        nook: `Hooo! ${TRAVELER}'s expedition begins soon, yes yes. Have you packed snacks? You should pack snacks.`,
+        nookOptions: [
+          `Hooo! ${TRAVELER}'s expedition begins soon, yes yes. Have you packed snacks? You should pack snacks.`,
+          `Yes, yes! ${TRAVELER} is at the airport. Hm-hmm, exciting times, hooo.`,
+          `Pre-flight preparations underway, hooo! May I interest you in a loan for the journey?`,
+          `Hm-hmm, three flights total. Three opportunities to rack up Nook Miles, yes yes!`,
+          `${TRAVELER}'s passport is checked. Hooo! What an organised traveler, yes yes.`,
+        ],
       };
 
     case 'in-flight': {
       const f = state.flight;
       return {
         hero: `✈️ Cruising over ${state.region}`,
-        nook: `Currently soaring above ${state.region} on flight ${f.num}, hm-hmm. ${flightCommentary(state)}`,
+        nookOptions: [
+          `Currently soaring above ${state.region} on flight ${f.num}, hm-hmm. Smooth skies ahead, yes yes.`,
+          `${TRAVELER} is in the air over ${state.region}! Yes yes, fly safely, hooo.`,
+          `Hooo! Looks like ${state.region} from up there. The view, the clouds, the catering — magnificent.`,
+          `Flight ${f.num} is going swimmingly, hm-hmm. ${TRAVELER} is somewhere near ${state.region}.`,
+          `Yes yes, ${TRAVELER}'s seat is fully reclined. As is appropriate over ${state.region}, hooo.`,
+          `Pretzels are being served, probably. Possibly. Probably probably, hm-hmm.`,
+          `Just like the days when I ran the airport on the island, yes yes. Wait, did I? Hm-hmm…`,
+        ],
       };
     }
 
     case 'layover':
       return {
-        hero: `🥨 On layover at ${state.atAirport}`,
-        nook: `Resting safely at ${state.atAirport}. Loan repayment unaffected. ${formatCountdownLong(state.msUntilNext)} until next departure, hooo.`,
+        hero: `🥨 On layover at ${state.atAirport} — ${formatCountdownLong(state.msUntilNext)} to go`,
+        nookOptions: [
+          `Resting at ${state.atAirport}, hm-hmm. Loan repayment unaffected, yes yes.`,
+          `${TRAVELER} is safely on the ground at ${state.atAirport}. Time for tea, yes yes.`,
+          `Hooo! Layover at ${state.atAirport}. Have you considered upgrading the next leg, hm-hmm?`,
+          `${state.atAirport} layover in progress, yes yes. The duty free is calling, hooo!`,
+          `Pretzel Day at ${state.atAirport}, probably. Stanley would approve, yes yes.`,
+        ],
       };
 
     case 'arrived':
       return {
         hero: `🇿🇦 Safely in Durban!`,
-        nook: `Welcome to Durban, traveler! ${TOTAL_MILES} Nook Miles earned, yes yes! What a journey, hooo!`,
+        nookOptions: [
+          `Welcome to Durban, traveler! ${TOTAL_MILES} Nook Miles earned, yes yes! What a journey, hooo!`,
+          `Hooo! ${TRAVELER} has arrived in Durban! Time to celebrate with a tasteful furniture purchase, yes yes.`,
+          `Yes yes, journey complete! ${TOTAL_MILES} Nook Miles in the bank. Beautiful day, hm-hmm.`,
+          `${TRAVELER} is on the ground in Durban! The loan is just kidding! Mostly. Welcome home.`,
+        ],
       };
 
     default:
-      return { hero: 'Loading…', nook: 'Hooo! Let me see, hm-hmm…' };
+      return { hero: 'Loading…', nookOptions: ['Hooo! Let me see, hm-hmm…'] };
   }
-}
-
-function flightCommentary(state) {
-  // Vary the secondary commentary slightly based on which leg
-  const tag = `${state.flight.num}-${Math.floor(state.progress * 4)}`;
-  const lines = [
-    'Smooth skies ahead, yes yes.',
-    'A fine adventure, hooo.',
-    'Just like the days when I ran the airport on the island, hm-hmm.',
-    'Pretzels are being served, probably.',
-    'A traveler in fine spirits.',
-  ];
-  // Cheap deterministic pick based on the tag string
-  const i = Math.abs(hash(tag)) % lines.length;
-  return lines[i];
-}
-
-function hash(s) {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
-  return h;
 }
