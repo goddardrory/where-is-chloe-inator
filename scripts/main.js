@@ -2,14 +2,14 @@ import { FLIGHTS } from '../data/flights.js';
 import { computeState, computeJourneyProgress, computeMilesEarned } from './flight-state.js';
 import { narrate, randomNookQuote } from './nook-narrator.js';
 import { typeAnimalese, cancelAnimalese, preloadAcedio, whenAcedioReady } from './animalese.js';
-import { start as startBgMusic } from './bg-music.js';
+import { start as startBgMusic, crossFadeTo as bgCrossFade, mute as muteBg, unmute as unmuteBg } from './bg-music.js';
 import { isOwed as isResettiOwed, showScold as showResettiScold } from './resetti-scold.js';
 import { formatCountdown } from './countdown.js';
 import { initEasterEggs, spawnConfetti, whenInitialDoofClosed, spawnFlyBy } from './easter-eggs.js';
 import { initMessages } from './messages.js';
 import { initTrivia } from './trivia.js';
 import { showToast } from './toast.js';
-import { playPerry, playPerryTheme, startKK, stopKK } from './audio.js';
+import { playPerry, playPerryTheme } from './audio.js';
 
 const TICK_MS = 1000; // 1s tick keeps countdown smooth; cheap.
 const NARRATOR_SWITCH_MS = 9000; // alternate bubble between state & quote
@@ -39,8 +39,10 @@ async function init() {
   initAudioControls();
 
   // Background music kicks off after init so all the duck/unduck wiring is in
-  // place. Will defer to first user gesture if autoplay is blocked.
-  startBgMusic();
+  // place. Pick the initial track based on the current journey phase so a
+  // visitor opening the page mid-flight hears the airline track immediately.
+  const initialState = computeState(new Date());
+  startBgMusic(initialState.phase === 'in-flight' ? 'air' : 'ground');
 
   tick();
   setInterval(tick, TICK_MS);
@@ -104,7 +106,6 @@ function tick() {
   updateCardsHighlight(state);
   updateLayover(state);
   updateMap(state);
-  updateAudioForState(state);
 
   // Phase change toasts
   const phase = state.phase;
@@ -121,14 +122,17 @@ function onPhaseChange(prevPhase, newState) {
   switch (newState.phase) {
     case 'in-flight':
       showToast(`✈️ Flight ${newState.flight.num} is airborne!`, 'success', 5000);
+      bgCrossFade('air');
       break;
     case 'layover':
       showToast(`🥨 Pretzel Day! On layover at ${newState.atAirport}`, '', 5000);
+      bgCrossFade('ground');
       break;
     case 'arrived':
       showToast(`🎉 Welcome to Durban, ${newState.finalFlight.arr.city}!`, 'success', 8000);
       spawnConfetti(60);
       playPerryTheme();
+      bgCrossFade('ground');
       break;
   }
 }
@@ -296,23 +300,14 @@ function initAudioControls() {
     });
   }
   if (kkToggle) {
+    // Default: pressed=true (music ON; pressing toggles to mute).
+    kkToggle.setAttribute('aria-pressed', 'true');
     kkToggle.addEventListener('click', () => {
       const pressed = kkToggle.getAttribute('aria-pressed') === 'true';
       const newState = !pressed;
       kkToggle.setAttribute('aria-pressed', String(newState));
-      if (newState) startKK(); else stopKK();
+      if (newState) unmuteBg(); else muteBg();
     });
-  }
-}
-
-// Auto-stop KK when not in flight
-function updateAudioForState(state) {
-  const kkToggle = document.getElementById('kk-toggle');
-  if (!kkToggle) return;
-  const pressed = kkToggle.getAttribute('aria-pressed') === 'true';
-  if (state.phase !== 'in-flight' && pressed) {
-    stopKK();
-    kkToggle.setAttribute('aria-pressed', 'false');
   }
 }
 
