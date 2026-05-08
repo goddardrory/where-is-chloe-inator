@@ -37,10 +37,12 @@ async function init() {
     gestureRecorded = true; // dismissing Resetti is itself a gesture
   }
 
-  // First-visit splash: a single click to unlock audio so the Doof overlay's
-  // jingle + bg-music can fire on this visit. Subsequent visits skip it.
-  const visited = (() => { try { return localStorage.getItem(VISITED_KEY) === '1'; } catch { return false; } })();
-  if (!visited && !gestureRecorded) {
+  // Always show the splash — browser autoplay needs a fresh user gesture on
+  // every page load, so the only way to guarantee the Doof jingle + bg-music
+  // play in sync with the overlay is to require one click on entry. The
+  // splash content adapts: full name prompt for first-time visitors, a
+  // brief "Welcome back" continue card for returning ones.
+  if (!gestureRecorded) {
     await showSplash();
   }
   try { localStorage.setItem(VISITED_KEY, '1'); } catch {}
@@ -324,21 +326,55 @@ function initAudioControls() {
   }
 }
 
-// === First-visit splash ===
+// === Entry splash ===
 //
-// Asks for the visitor's name. Submitting (or skipping) is the gesture that
-// unlocks audio for the Doof overlay's jingle and bg-music. The name is
-// stored in localStorage and pre-fills the message wall on every visit.
+// Shows on every page load to guarantee a user gesture before the Doof
+// overlay opens (so the jingle + bg-music play in sync). Adapts its content:
+//   - First visit: name prompt + "Begin journey ✨" button.
+//   - Returning visit: "Welcome back, <name>!" + "Continue ✨" button.
+//
+// Submitting (or skipping) is the gesture that unlocks audio.
 function showSplash() {
   return new Promise((resolve) => {
-    const splash = document.getElementById('splash-overlay');
-    const form   = document.getElementById('splash-form');
-    const input  = document.getElementById('splash-name');
-    const skip   = document.getElementById('splash-skip');
+    const splash   = document.getElementById('splash-overlay');
+    const form     = document.getElementById('splash-form');
+    const titleEl  = splash && splash.querySelector('.splash-title');
+    const subEl    = splash && splash.querySelector('.splash-sub');
+    const input    = document.getElementById('splash-name');
+    const submit   = form && form.querySelector('.splash-button');
+    const skip     = document.getElementById('splash-skip');
     if (!splash || !form) { resolve(); return; }
 
+    let savedName = '';
+    try { savedName = localStorage.getItem(NAME_KEY) || ''; } catch {}
+
+    if (savedName) {
+      // Returning-visitor variant
+      if (titleEl) titleEl.textContent = `Welcome back, ${savedName}!`;
+      if (subEl)   subEl.textContent   = 'Hooo! Click to follow the journey.';
+      if (input) {
+        input.removeAttribute('required');
+        input.style.display = 'none';
+        input.value = savedName;
+      }
+      if (submit) submit.textContent = 'Continue ✨';
+      if (skip)   skip.style.display = 'none';
+    } else {
+      // First-visit variant — restore defaults if the splash element was reused
+      if (titleEl) titleEl.textContent = 'Hooo! Welcome, traveler!';
+      if (subEl)   subEl.textContent   = 'What shall we call you, hm-hmm?';
+      if (input) {
+        input.setAttribute('required', '');
+        input.style.display = '';
+      }
+      if (submit) submit.textContent = 'Begin journey ✨';
+      if (skip)   skip.style.display = '';
+    }
+
     splash.classList.add('is-open');
-    setTimeout(() => { try { input && input.focus(); } catch {} }, 250);
+    setTimeout(() => {
+      try { if (input && !savedName) input.focus(); } catch {}
+    }, 250);
 
     const finish = (name) => {
       try { if (name) localStorage.setItem(NAME_KEY, name); } catch {}
