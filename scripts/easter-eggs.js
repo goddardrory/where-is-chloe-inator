@@ -271,9 +271,32 @@ function initRogueDuck() {
   goose.style.transformOrigin = 'center';
   goose.classList.remove('waddling'); // disable the legacy CSS animation
 
+  // Click handling: a casual click just gets a quack + small bounce. Only
+  // rapid-fire clicks (3 within ~1.8s) actually scare the goose into flying
+  // away. Lets visitors interact without immediately losing the bird.
+  let recentClicks = [];
+  const PANIC_THRESHOLD = 3;
+  const PANIC_WINDOW_MS = 1800;
   goose.addEventListener('click', () => {
     if (goosePanicking) return;
-    panicAndExit(goose);
+    const now = Date.now();
+    recentClicks = recentClicks.filter((t) => now - t < PANIC_WINDOW_MS);
+    recentClicks.push(now);
+
+    if (recentClicks.length >= PANIC_THRESHOLD) {
+      recentClicks = [];
+      panicAndExit(goose);
+      return;
+    }
+
+    // Casual interaction: quack + a tiny bounce
+    playQuackVarying(0.7, 1.6);
+    const base = currentDirTransform(goose);
+    goose.style.transition = 'transform 0.15s ease';
+    goose.style.transform = `${base} scale(1.18)`;
+    setTimeout(() => {
+      if (!goosePanicking) goose.style.transform = base;
+    }, 180);
   });
 
   // Reduced motion: skip the wandering; one waddle, no gifts, no footprints
@@ -309,14 +332,15 @@ function panicAndExit(goose) {
   }, 1100);
 }
 
-// Source sprite faces LEFT, so walking right requires a horizontal flip.
+// Source sprites all face RIGHT (artist convention from the spritesheet),
+// so walking left requires a horizontal flip.
 function currentDirTransform(el) {
-  return el.dataset.facing === 'right' ? 'scaleX(-1)' : 'scaleX(1)';
+  return el.dataset.facing === 'left' ? 'scaleX(-1)' : 'scaleX(1)';
 }
 
 function setDir(el, isRight) {
   el.dataset.facing = isRight ? 'right' : 'left';
-  el.style.transform = isRight ? 'scaleX(-1)' : 'scaleX(1)';
+  el.style.transform = isRight ? 'scaleX(1)' : 'scaleX(-1)';
 }
 
 async function beginGooseVisit(goose) {
@@ -414,23 +438,24 @@ function pauseAndAct(goose) {
 }
 
 function dropFootprint(goose) {
+  const r = goose.getBoundingClientRect();
   const print = document.createElement('div');
   print.className = 'goose-footprint';
-  // Position roughly at the goose's feet
-  print.style.left = `${goose.offsetLeft + (goose.offsetWidth || 52) / 2 - 10}px`;
-  print.style.top  = `${goose.offsetTop  + (goose.offsetHeight || 52) - 8}px`;
+  // Place at the goose's feet (centre x, just inside its bottom edge)
+  print.style.left = `${r.left + r.width / 2 - 10}px`;
+  print.style.top  = `${r.top  + r.height - 6}px`;
   document.body.appendChild(print);
-  // Trigger fade after a tick so the initial state is rendered
   requestAnimationFrame(() => { print.style.opacity = '0'; });
   setTimeout(() => print.remove(), 4500);
 }
 
 function dropGift(goose) {
+  const r = goose.getBoundingClientRect();
   const gift = document.createElement('div');
   gift.className = 'goose-gift';
   gift.textContent = GOOSE_GIFTS[Math.floor(Math.random() * GOOSE_GIFTS.length)];
-  gift.style.left = `${goose.offsetLeft + (goose.offsetWidth || 52) / 2 - 14}px`;
-  gift.style.top  = `${goose.offsetTop  + (goose.offsetHeight || 52) - 18}px`;
+  gift.style.left = `${r.left + r.width / 2 - 14}px`;
+  gift.style.top  = `${r.top  + r.height - 18}px`;
   document.body.appendChild(gift);
   setTimeout(() => { gift.style.opacity = '0'; }, 6000);
   setTimeout(() => gift.remove(), 12000);

@@ -148,7 +148,8 @@ input, textarea, button {
 
 /* Push hero text away from the portrait so they don't collide */
 .hero-eyebrow,
-.hero-title {
+.hero-title,
+.nook-row {
   padding-right: 100px;
 }
 
@@ -892,10 +893,14 @@ input, textarea, button {
 }
 
 /* === ROGUE GOOSE === */
+/* Position is controlled entirely by JS via top/left. The CSS just sets
+   the initial chrome and stacking. No `bottom` rule — that conflicted
+   with JS-set `top` and pinned the goose to the bottom of the viewport,
+   which threw off footprint/gift positioning. */
 .rogue-duck {
   position: fixed;
-  bottom: 8px;
   left: -200px;
+  top: -200px;
   font-size: 52px;
   z-index: 40;
   cursor: pointer;
