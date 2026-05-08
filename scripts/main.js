@@ -492,7 +492,11 @@ function showSplash() {
 // the page racks up Nook Miles. First time triggering each gets a toast via
 // awardAchievement; repeats just nudge the counter.
 function initInteractiveMiles() {
-  // Tom Nook avatar — pet him for a small bonus + replay a famous quote
+  // Tom Nook avatar — pet him for a small bonus + replay a famous quote.
+  // Crucially we DO NOT reset lastStateKey here. If we did, the very next
+  // tick (≤1s) would re-pick a state line and overwrite the quote we just
+  // typed. By leaving lastStateKey alone, the click's quote stays put until
+  // the next natural rotation (state-phase change or narrator-mode flip).
   const nookAvatar = document.querySelector('.nook-avatar');
   if (nookAvatar) {
     nookAvatar.style.cursor = 'pointer';
@@ -500,10 +504,7 @@ function initInteractiveMiles() {
       addMiles(2, 'pet Tom Nook');
       awardAchievement('pet-nook', 'Tom Nook says hi!', 30);
       const bubble = document.getElementById('nook-bubble');
-      if (bubble) {
-        lastStateKey = null; // force the next tick to refresh state line
-        typeAnimalese(bubble, randomNookQuote());
-      }
+      if (bubble) typeAnimalese(bubble, randomNookQuote());
     });
   }
 
