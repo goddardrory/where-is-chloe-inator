@@ -1,6 +1,6 @@
 import { FLIGHTS } from '../data/flights.js';
 import { computeState, computeJourneyProgress, computeMilesEarned } from './flight-state.js';
-import { narrate } from './nook-narrator.js';
+import { narrate, randomNookQuote } from './nook-narrator.js';
 import { formatCountdown } from './countdown.js';
 import { initEasterEggs, spawnConfetti } from './easter-eggs.js';
 import { initMessages } from './messages.js';
@@ -9,9 +9,12 @@ import { showToast } from './toast.js';
 import { playPerry, playPerryTheme, startKK, stopKK } from './audio.js';
 
 const TICK_MS = 1000; // 1s tick keeps countdown smooth; cheap.
+const NARRATOR_SWITCH_MS = 9000; // alternate bubble between state & quote
 
 let lastPhase = null;
 let lastFlightIdx = null;
+let narratorMode = 'state'; // 'state' or 'quote'
+let currentQuote = '';
 
 function init() {
   renderFlightCards();
@@ -22,6 +25,17 @@ function init() {
 
   tick();
   setInterval(tick, TICK_MS);
+
+  // Alternate the Tom Nook bubble between live status and famous quotes.
+  // The 1s tick still updates the bubble during the 'state' window.
+  setInterval(() => {
+    narratorMode = narratorMode === 'state' ? 'quote' : 'state';
+    if (narratorMode === 'quote') {
+      currentQuote = randomNookQuote();
+      setText('nook-bubble', currentQuote);
+    }
+    // When mode flips back to 'state', the next tick (≤1s) refreshes naturally.
+  }, NARRATOR_SWITCH_MS);
 }
 
 // === Tick: re-render based on current state ===
@@ -33,7 +47,7 @@ function tick() {
   const { hero, nook } = narrate(state);
 
   setText('status-line', hero);
-  setText('nook-bubble', nook);
+  if (narratorMode === 'state') setText('nook-bubble', nook);
   setText('miles-count', miles);
 
   const fill = document.getElementById('progress-fill');

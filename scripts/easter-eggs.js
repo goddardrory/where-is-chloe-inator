@@ -1,4 +1,4 @@
-import { playPerry, playPerryTheme, playQuack, playBomboclaat } from './audio.js';
+import { playPerry, playPerryTheme, playQuack, playBomboclaat, playMiBombo, playExplosion } from './audio.js';
 import { showToast } from './toast.js';
 
 const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
@@ -19,7 +19,7 @@ export function initEasterEggs() {
   initKonami();
   initDoofTyping();
   initTriStateTyping();
-  initBomboclaatTyping();
+  initBombDetonation();
   initRogueDuck();
   initLeaves();
 
@@ -137,19 +137,52 @@ function initTriStateTyping() {
   });
 }
 
-// === Type "bomb" anywhere → Resetti yells BOMBOCLAAT ===
-function initBomboclaatTyping() {
+// === Type "bomb" anywhere → DETONATE the entire website ===
+function initBombDetonation() {
   const target = 'bomb';
   let buffer = '';
+  let detonating = false;
   document.addEventListener('keydown', (e) => {
+    if (detonating) return;
     if (e.key.length !== 1) return;
     buffer = (buffer + e.key.toLowerCase()).slice(-target.length);
     if (buffer === target) {
       buffer = '';
-      playBomboclaat();
-      showToast('🦔 RESETTI: BOMBOCLAAT?!?!', 'bankruptcy', 3000);
+      detonating = true;
+      detonate();
     }
   });
+}
+
+// Two-phase explosion sequence:
+//   1. Mi-bombo plays + page shakes lightly (anticipation, ~2.4s)
+//   2. Explosion sound + white flash + screen shake + content blasts apart
+//      → fades to black → page is wiped, only black remains
+function detonate() {
+  playMiBombo();
+  document.body.classList.add('pre-explode-shake');
+
+  setTimeout(() => {
+    document.body.classList.remove('pre-explode-shake');
+    document.body.classList.add('exploding');
+    playExplosion();
+
+    const flash = document.createElement('div');
+    flash.id = 'detonation-flash';
+    document.body.appendChild(flash);
+
+    // After the flash, fade to pure black and wipe the page.
+    setTimeout(() => {
+      flash.classList.add('to-black');
+      setTimeout(() => {
+        // Tear it all down: nothing left except black.
+        document.body.replaceChildren();
+        document.documentElement.style.background = '#000';
+        document.body.style.background = '#000';
+        document.body.style.overflow = 'hidden';
+      }, 1200);
+    }, 450);
+  }, 2400);
 }
 
 // === Rogue duck waddle ===

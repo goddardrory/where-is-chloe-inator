@@ -8,6 +8,8 @@ const SOURCES = {
   quack:      'assets/audio/quack.mp3',
   kkAirline:  'assets/audio/kk-airline.mp3',
   bomboclaat: 'assets/audio/bomboclaat.mp3',
+  miBombo:    'assets/audio/mi-bombo.mp3',
+  explosion:  'assets/audio/explosion.mp3',
 };
 
 const cache = {};
@@ -47,6 +49,37 @@ export function playBomboclaat() {
   const audio = load('bomboclaat');
   if (audio) tryPlay(audio.cloneNode());
   else fallbackBeep(110, 0.5); // deep rumble fallback
+}
+
+// === Mi bombo: drum-roll-style anticipation cue ===
+export function playMiBombo() {
+  const audio = load('miBombo');
+  if (audio) { tryPlay(audio.cloneNode()); return; }
+  // Synthesized fallback: 8 fast drum hits ramping up
+  for (let i = 0; i < 8; i++) {
+    setTimeout(() => fallbackBeep(60 + i * 8, 0.07), i * 180);
+  }
+}
+
+// === Explosion: white-noise burst ===
+export function playExplosion() {
+  const audio = load('explosion');
+  if (audio) { tryPlay(audio.cloneNode()); return; }
+  const c = ac(); if (!c) return;
+  const len = Math.floor(c.sampleRate * 1.4);
+  const buf = c.createBuffer(1, len, c.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) {
+    // Loud at start, decay quadratically
+    const decay = Math.pow(1 - i / len, 2);
+    data[i] = (Math.random() * 2 - 1) * decay;
+  }
+  const noise = c.createBufferSource();
+  noise.buffer = buf;
+  const gain = c.createGain();
+  gain.gain.value = 0.6;
+  noise.connect(gain).connect(c.destination);
+  noise.start();
 }
 
 export function startKK() {

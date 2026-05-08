@@ -1,6 +1,31 @@
 import { TRAVELER, TOTAL_MILES } from '../data/flights.js';
 import { formatCountdownLong } from './countdown.js';
 
+// Iconic Tom Nook lines — used to alternate the hero bubble between
+// live status and Tom Nook's greatest hits.
+export const NOOK_QUOTES = [
+  'Hooo!',
+  'Yes, yes! Hm-hmm.',
+  'I\'ll have you know my furniture comes from a reputable source, hooo!',
+  'Are you sure? Are you really, really sure? Take your time, hm-hmm.',
+  'Wonderful! …Or is it?',
+  '"What\'s that, hm? Oh, I see, I see."',
+  'Resetti is on holiday, yes yes. Turbulence is no concern.',
+  'Welcome to Nook\'s Cranny! …in the sky, today, hooo.',
+  'Loan repayment received! Now please, take out another. It is bigger! It is better!',
+  'Hooo, where to begin? Where to begin…',
+  'I have a special offer just for you, yes yes! …Bells, lots of Bells.',
+  '49,800 Bells, please. Cash, card, or carrier-pigeon, hm-hmm.',
+  'Hm-hmm. The loan can wait. The loan ALWAYS waits, yes yes.',
+  'Did somebody say… in-flight furniture catalog, hooo?',
+  'Cousin? Cousin! …oh wait, that\'s Timmy and Tommy, hm-hmm.',
+  'I once flew economy. Once. We do not speak of it, yes yes.',
+];
+
+export function randomNookQuote() {
+  return NOOK_QUOTES[Math.floor(Math.random() * NOOK_QUOTES.length)];
+}
+
 // Map a state object (from flight-state.js) to:
 //   { hero: string, nook: string }
 // The hero line is the big one-liner. The nook line is what Tom Nook says.
