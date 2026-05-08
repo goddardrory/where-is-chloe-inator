@@ -9,6 +9,10 @@ export function initEasterEggs() {
   initDoofTyping();
   initRogueDuck();
   initLeaves();
+
+  // Show the Doof overlay on page load so visitors see it without having to
+  // discover the `doof` typing trigger. The same dismissal logic applies.
+  setTimeout(showDoof, 500);
 }
 
 // === Logo click: "Perryyy!" ===
@@ -74,8 +78,23 @@ function initDoofTyping() {
 function showDoof() {
   const overlay = document.getElementById('doof-overlay');
   if (!overlay) return;
-  overlay.hidden = false;
-  setTimeout(() => { overlay.hidden = true; }, 4500);
+  overlay.classList.add('is-open');
+
+  let closed = false;
+  const close = () => {
+    if (closed) return;
+    closed = true;
+    overlay.classList.remove('is-open');
+    overlay.removeEventListener('click', onClick);
+    document.removeEventListener('keydown', onKey);
+    clearTimeout(timer);
+  };
+  const onClick = () => close();
+  const onKey = () => close();
+
+  overlay.addEventListener('click', onClick);
+  document.addEventListener('keydown', onKey);
+  const timer = setTimeout(close, 4500);
 }
 
 // === Rogue duck waddle ===

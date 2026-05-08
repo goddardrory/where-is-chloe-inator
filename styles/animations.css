@@ -75,8 +75,8 @@
   100% { opacity: 1; transform: scale(1) rotate(0deg); }
 }
 
-.doof-overlay { animation: doof-fade-in 0.3s ease-out both; }
-.doof-content { animation: doof-content-in 0.6s cubic-bezier(.34,1.56,.64,1) both; }
+.doof-overlay.is-open         { animation: doof-fade-in 0.3s ease-out both; }
+.doof-overlay.is-open .doof-content { animation: doof-content-in 0.6s cubic-bezier(.34,1.56,.64,1) both; }
 
 /* === Nook bubble subtle wobble === */
 @keyframes nook-wobble {

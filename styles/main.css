@@ -813,11 +813,12 @@ input, textarea, button {
   inset: 0;
   background: rgba(80, 20, 100, 0.85);
   z-index: 200;
-  display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
+  display: none;
 }
+.doof-overlay.is-open { display: flex; }
 
 .doof-content {
   background: linear-gradient(135deg, #5b21b6 0%, #7c2d92 100%);
@@ -828,7 +829,27 @@ input, textarea, button {
   color: #fff;
   max-width: 480px;
   box-shadow: 0 0 60px rgba(251, 191, 36, 0.4);
+  position: relative;
 }
+
+.doof-close {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  font-size: 28px;
+  line-height: 1;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  z-index: 1;
+}
+.doof-close:hover { background: rgba(0, 0, 0, 0.5); }
 
 .doof-emoji { font-size: 64px; margin-bottom: 8px; }
 .doof-title {
