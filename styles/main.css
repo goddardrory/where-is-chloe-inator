@@ -905,6 +905,25 @@ input, textarea, button {
 }
 .lizard-king-blackout.is-on { opacity: 1; }
 
+/* Red radial vignette — fades in over the slow zoom and intensifies the
+   atmosphere. Sits between the blackout and the goose so the goose stays
+   visible while a red glow eats the edges of the screen. */
+.lizard-king-vignette {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 50%,
+      transparent 0%,
+      transparent 18%,
+      rgba(180, 20, 20, 0.35) 55%,
+      rgba(140, 10, 10, 0.85) 100%);
+  z-index: 450;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 11.5s ease-in;
+}
+.lizard-king-vignette.is-on { opacity: 1; }
+
 /* === ROGUE GOOSE === */
 /* Position is controlled entirely by JS via top/left. The CSS just sets
    the initial chrome and stacking. No `bottom` rule — that conflicted

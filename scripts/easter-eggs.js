@@ -385,6 +385,10 @@ function lizardKingSequence(goose) {
   if (cinematicActive) return;
   cinematicActive = true;
 
+  // Tell main.js to halt the narrator rotation timer so Nook doesn't pick a
+  // fresh quote partway through. main.js listens for this event.
+  document.dispatchEvent(new CustomEvent('cinematic-start'));
+
   // Silence everything else so the lizard king audio is unobstructed.
   muteBgMusic();
   cancelAnimalese();
@@ -411,6 +415,12 @@ function lizardKingSequence(goose) {
   blackout.className = 'lizard-king-blackout';
   document.body.appendChild(blackout);
 
+  // Red radial vignette — fades in as the slow-zoom progresses, holding
+  // through the face zoom for that "something is very wrong" energy.
+  const vignette = document.createElement('div');
+  vignette.className = 'lizard-king-vignette';
+  document.body.appendChild(vignette);
+
   goose.style.zIndex = '500';
 
   // Force layout flush so the centred-state position is committed before
@@ -419,6 +429,8 @@ function lizardKingSequence(goose) {
   void goose.offsetHeight;
 
   blackout.classList.add('is-on');
+  // Trigger the vignette next frame so its CSS transition kicks in
+  requestAnimationFrame(() => vignette.classList.add('is-on'));
   playLizardKing();
 
   const zoomMs = LIZARD_DURATION_MS - LIZARD_HOLD_MS;
@@ -428,27 +440,27 @@ function lizardKingSequence(goose) {
   goose.style.transition = `transform ${zoomMs}ms ease-in-out`;
   goose.style.transform = 'scaleX(1) scale(6)';
 
-  // Phase 2 — hard cut to face zoom.
-  // The face on the still sprite sits around 38% from the top (head/hat
-  // occupies the upper third; eyes/beak are mid-head). Origin at the face,
-  // translate compensates to put the face pivot at viewport centre, scale
-  // 20 makes the face dominate the screen without overshooting.
+  // Phase 2 — hard cut: scale down a touch to scale 18, push the goose
+  // physically up the screen so the face lands in the upper third (where
+  // the user wants it), origin at the face on the sprite.
   setTimeout(() => {
     if (!cinematicActive) return;
     goose.style.transition = 'none';
-    goose.style.transformOrigin = '50% 38%';
-    const faceTranslateY = elemH * 0.12; // (50% − 38%) of element height
-    goose.style.transform = `translate(0px, ${faceTranslateY}px) scaleX(1) scale(20)`;
+    goose.style.transformOrigin = '50% 35%';
+    const faceTranslateY = -elemH * 1.0; // shift the goose UP a full elemH
+    goose.style.transform = `translate(0px, ${faceTranslateY}px) scaleX(1) scale(18)`;
   }, zoomMs);
 
   // Phase 4 — fade back at total duration
   setTimeout(() => {
     blackout.classList.remove('is-on');
+    vignette.classList.remove('is-on');
     goose.style.transition = 'transform 0.55s ease-out';
     goose.style.transformOrigin = '50% 50%';
     goose.style.transform = 'scaleX(1)';
     setTimeout(() => {
       blackout.remove();
+      vignette.remove();
       goose.style.zIndex = originalZ === 'auto' ? '40' : originalZ;
       if (gooseImg && originalSrc) {
         gooseImg.src = originalSrc.includes('?')
@@ -457,8 +469,9 @@ function lizardKingSequence(goose) {
       }
       cinematicActive = false;
       unmuteBgMusic();
-      // Reset goose direction so the next walk picks correctly
       goose.dataset.facing = 'right';
+      // Tell main.js to resume narrator rotation
+      document.dispatchEvent(new CustomEvent('cinematic-end'));
       // Schedule a fresh visit since the walk loop bailed during cinematic
       setTimeout(() => beginGooseVisit(goose), 30_000 + Math.random() * 60_000);
     }, 650);

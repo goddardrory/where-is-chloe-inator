@@ -24,6 +24,23 @@ let currentQuote = '';
 let lastStateKey = null;     // re-animalese only when this changes
 let bubbleReady = false;     // gated until Acedio + Doof overlay are done
 let narratorTimer = null;    // pending flip; cleared/reset by every new line
+let cinemaSuppressed = false; // true while a cinematic (lizard king) is live
+
+// Listen for cinematic events so the narrator doesn't keep speaking through
+// the lizard king effect. cinematic-start clears any pending flip; -end
+// resumes rotation after a small beat.
+document.addEventListener('cinematic-start', () => {
+  cinemaSuppressed = true;
+  if (narratorTimer) { clearTimeout(narratorTimer); narratorTimer = null; }
+  cancelAnimalese();
+});
+document.addEventListener('cinematic-end', () => {
+  cinemaSuppressed = false;
+  // Wait a beat before kicking the rotation off again
+  setTimeout(() => {
+    if (!cinemaSuppressed) flipNarratorMode();
+  }, 1500);
+});
 
 // Schedule the NEXT narrator-mode flip based on how long the *current* line
 // will take to type out. Replaces the old fixed-interval rotator so long
@@ -149,7 +166,7 @@ function tick() {
   // State-mode bubble: type a fresh random line via Animalese only when we
   // first enter state mode or the phase changes. Gated on bubbleReady so we
   // don't fire the first quote until the Doof overlay closes + Acedio loads.
-  if (narratorMode === 'state' && bubbleReady) {
+  if (narratorMode === 'state' && bubbleReady && !cinemaSuppressed) {
     const key = `${state.phase}:${state.index ?? ''}`;
     if (key !== lastStateKey) {
       lastStateKey = key;
