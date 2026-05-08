@@ -27,33 +27,13 @@ export function initEasterEggs() {
   initRogueDuck();
   initLeaves();
 
-  // Defer the initial Doof overlay until the first user gesture. Until the
-  // user interacts, browser autoplay policy blocks audio, so the jingle
-  // would only fire on dismissal. Waiting for a gesture means the overlay
-  // and jingle appear together (with a 15s fallback so the page isn't
-  // permanently silent if a visitor just stares).
-  initialDoofPromise = waitForFirstGesture(15000).then(() => showDoof());
-}
-
-function waitForFirstGesture(timeoutMs) {
-  return new Promise((resolve) => {
-    let done = false;
-    const fire = () => {
-      if (done) return;
-      done = true;
-      cleanup();
-      resolve();
-    };
-    const cleanup = () => {
-      document.removeEventListener('pointerdown', fire, true);
-      document.removeEventListener('keydown',     fire, true);
-      document.removeEventListener('touchstart',  fire, true);
-      clearTimeout(timer);
-    };
-    document.addEventListener('pointerdown', fire, { capture: true, once: true });
-    document.addEventListener('keydown',     fire, { capture: true, once: true });
-    document.addEventListener('touchstart',  fire, { capture: true, once: true });
-    const timer = setTimeout(fire, timeoutMs);
+  // Show the Doof overlay 500ms after page load. Audio (jingle + bg-music)
+  // may be blocked by browser autoplay policy on a first visit until the
+  // user gestures — playDoofJingle queues itself for the first interaction
+  // so the jingle still fires on the dismissal click on first load and
+  // plays cleanly on subsequent visits / overlay re-triggers.
+  initialDoofPromise = new Promise((resolve) => {
+    setTimeout(() => showDoof().then(resolve), 500);
   });
 }
 
