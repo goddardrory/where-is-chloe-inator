@@ -2,6 +2,8 @@ import { FLIGHTS } from '../data/flights.js';
 import { computeState, computeJourneyProgress, computeMilesEarned } from './flight-state.js';
 import { narrate, randomNookQuote } from './nook-narrator.js';
 import { typeAnimalese, cancelAnimalese } from './animalese.js';
+import { start as startBgMusic } from './bg-music.js';
+import { isOwed as isResettiOwed, showScold as showResettiScold } from './resetti-scold.js';
 import { formatCountdown } from './countdown.js';
 import { initEasterEggs, spawnConfetti } from './easter-eggs.js';
 import { initMessages } from './messages.js';
@@ -17,12 +19,22 @@ let lastFlightIdx = null;
 let narratorMode = 'state'; // 'state' or 'quote'
 let currentQuote = '';
 
-function init() {
+async function init() {
+  // If they detonated the site on a previous visit, Resetti has a word for
+  // them before anything else loads.
+  if (isResettiOwed()) {
+    await showResettiScold();
+  }
+
   renderFlightCards();
   initEasterEggs();
   initMessages();
   initTrivia();
   initAudioControls();
+
+  // Background music kicks off after init so all the duck/unduck wiring is in
+  // place. Will defer to first user gesture if autoplay is blocked.
+  startBgMusic();
 
   tick();
   setInterval(tick, TICK_MS);

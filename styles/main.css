@@ -877,6 +877,95 @@ input, textarea, button {
 .rogue-duck:hover { transform: scale(1.15); }
 .rogue-duck:active { transform: scale(0.9); }
 
+/* === RESETTI SCOLD OVERLAY === */
+.resetti-overlay {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(220, 38, 38, 0.35), transparent 60%),
+    rgba(20, 8, 4, 0.94);
+  z-index: 250;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  display: none;
+  overflow-y: auto;
+}
+.resetti-overlay.is-open { display: flex; }
+
+.resetti-content {
+  background: linear-gradient(180deg, #44190f 0%, #2a0e08 100%);
+  border: 4px solid #fbbf24;
+  border-radius: 22px;
+  padding: 24px 24px 20px;
+  text-align: center;
+  color: #fff5d6;
+  max-width: 560px;
+  width: 100%;
+  box-shadow: 0 0 80px rgba(220, 38, 38, 0.5);
+}
+
+.resetti-portrait {
+  width: 180px;
+  height: 150px;
+  object-fit: contain;
+  margin: -10px auto 6px;
+  display: block;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+}
+
+.resetti-title {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  color: #fbbf24;
+  margin: 6px 0 16px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.resetti-rant {
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.55;
+  font-weight: 700;
+  color: #ffe5b6;
+  background: rgba(0, 0, 0, 0.35);
+  border: 2px dashed rgba(251, 191, 36, 0.4);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  min-height: 120px;
+}
+.resetti-line {
+  margin: 0 0 10px;
+}
+.resetti-line:last-child { margin-bottom: 0; }
+
+.resetti-dismiss {
+  background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+  color: #2a0e08;
+  font-weight: 900;
+  font-size: 14px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 3px 0 #b45309;
+  transition: transform 0.1s, box-shadow 0.1s, opacity 0.2s;
+}
+.resetti-dismiss:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 0 #b45309;
+}
+.resetti-dismiss:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #b45309;
+}
+.resetti-dismiss:disabled,
+.resetti-dismiss.is-waiting {
+  opacity: 0.45;
+  cursor: wait;
+}
+
 /* === DOOF OVERLAY === */
 .doof-overlay {
   position: fixed;

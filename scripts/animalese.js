@@ -8,6 +8,7 @@
 // Fallback: per-character synth blip via Web Audio.
 
 import { playNookAnimaleseChar } from './audio.js';
+import { duck, unduck } from './bg-music.js';
 
 // Acedio lib output is a fixed 0.075s per character regardless of pitch.
 const ACEDIO_MS_PER_CHAR = 75;
@@ -81,7 +82,12 @@ function typeWithAcedio(el, text, opts) {
   if (wave && wave.dataURI) {
     const audio = new Audio(wave.dataURI);
     audio.volume = 0.5;
-    audio.play().catch(() => { /* autoplay blocked — typewriter still runs */ });
+    duck();
+    let released = false;
+    const release = () => { if (!released) { released = true; unduck(); } };
+    audio.addEventListener('ended', release, { once: true });
+    audio.addEventListener('error', release, { once: true });
+    audio.play().catch(release);
     activeAudio = audio;
   }
 

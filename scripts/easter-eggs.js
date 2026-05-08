@@ -1,5 +1,7 @@
 import { playPerry, playPerryTheme, playQuack, playBomboclaat, playMiBombo, playExplosion } from './audio.js';
 import { showToast } from './toast.js';
+import { silence as silenceBgMusic } from './bg-music.js';
+import { flagBombed } from './resetti-scold.js';
 
 const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
 
@@ -159,6 +161,9 @@ function initBombDetonation() {
 //   2. Explosion sound + white flash + screen shake + content blasts apart
 //      → fades to black → page is wiped, only black remains
 function detonate() {
+  // Set the flag now so even a fast tab-close doesn't escape Resetti.
+  flagBombed();
+
   playMiBombo();
   document.body.classList.add('pre-explode-shake');
 
@@ -166,6 +171,8 @@ function detonate() {
     document.body.classList.remove('pre-explode-shake');
     document.body.classList.add('exploding');
     playExplosion();
+    // Kill the bg-music permanently — no sound after the boom.
+    silenceBgMusic();
 
     const flash = document.createElement('div');
     flash.id = 'detonation-flash';

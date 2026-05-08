@@ -2,6 +2,8 @@
 // If a file is missing, playback is silently skipped — the site stays functional
 // without the audio assets.
 
+import { duck, unduck } from './bg-music.js';
+
 const SOURCES = {
   perryyy:    'assets/audio/perryyy.mp3',
   perryTheme: 'assets/audio/perry-theme.mp3',
@@ -62,6 +64,8 @@ export function playNookAnimaleseChar(char) {
   const c = ac(); if (!c) return;
   // Resume if the context is suspended (autoplay policy)
   if (c.state === 'suspended' && c.resume) c.resume().catch(() => {});
+  // Per-char animalese blips would thrash the duck refcount; the Animalese
+  // module ducks once around the entire phrase via Audio() instead.
   try {
     const code = char.toLowerCase().charCodeAt(0) - 97;
     const semitones = PENTATONIC[Math.abs(code) % PENTATONIC.length] - 5;
@@ -88,6 +92,7 @@ export function playMiBombo() {
   const audio = load('miBombo');
   if (audio) { tryPlay(audio.cloneNode()); return; }
   // Synthesized fallback: 8 fast drum hits ramping up
+  duckFor(8 * 180 + 100);
   for (let i = 0; i < 8; i++) {
     setTimeout(() => fallbackBeep(60 + i * 8, 0.07), i * 180);
   }
@@ -98,6 +103,7 @@ export function playExplosion() {
   const audio = load('explosion');
   if (audio) { tryPlay(audio.cloneNode()); return; }
   const c = ac(); if (!c) return;
+  duckFor(1500);
   const len = Math.floor(c.sampleRate * 1.4);
   const buf = c.createBuffer(1, len, c.sampleRate);
   const data = buf.getChannelData(0);
@@ -132,8 +138,19 @@ export function stopKK() {
 }
 
 function tryPlay(audio) {
+  duck();
+  const release = () => unduck();
+  audio.addEventListener('ended', release, { once: true });
+  audio.addEventListener('error', release, { once: true });
+  audio.addEventListener('pause', release, { once: true });
   const p = audio.play();
-  if (p && typeof p.catch === 'function') p.catch(() => { /* autoplay blocked, ignore */ });
+  if (p && typeof p.catch === 'function') p.catch(() => { release(); });
+}
+
+// Manual duck for synthesised (Web Audio) sounds that don't fire DOM events.
+function duckFor(durationMs) {
+  duck();
+  setTimeout(unduck, durationMs);
 }
 
 // === WebAudio fallbacks for when no .mp3 files are present ===
