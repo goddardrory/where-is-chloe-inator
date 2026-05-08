@@ -371,100 +371,95 @@ function initRogueDuck() {
   setTimeout(() => beginGooseVisit(goose), 25_000);
 }
 
-// Rare cinematic on goose click. Three phases:
-//   Phase 1 (0  → ~11.5s): blackout + slow zoom to scale 6 on the goose
-//                          while the lizard king audio plays
-//   Phase 2 (~11.5s, instant): HARD-CUT to a deep face zoom — origin shifts
-//                              to the head, scale jumps to 22, duck holds still
-//   Phase 3 (~11.5s → ~14.5s): hold the face zoom for the final 3 seconds
-//   Phase 4 (~14.5s): fade back to normal, restore audio
-//
-// All bg-music is muted at the start and faded back in at the end. Awards
-// miles + achievement.
+// Rare cinematic on goose click. Phases:
+//   Phase 1 (0 → ~11.5s): blackout + slow zoom from scale 1 to scale 6 on a
+//                         centred, completely-still goose while the lizard
+//                         king audio plays. Bg-music + Animalese muted.
+//   Phase 2 (~11.5s, instant): HARD CUT to a ridiculous face zoom — scale
+//                              jumps to 30, transform-origin moves onto the
+//                              face so it lands at viewport centre.
+//   Phase 3 (~11.5s → ~14.5s): hold the face zoom for the final 3 seconds.
+//   Phase 4 (~14.5s): fade everything back, restore GIF, unmute, schedule
+//                     next visit.
 function lizardKingSequence(goose) {
   if (cinematicActive) return;
   cinematicActive = true;
 
-  // Silence ALL audio immediately so the lizard king audio stands alone.
-  // bg-music ducks via mute(); Tom Nook's bubble narration is cut off via
-  // cancelAnimalese() which pauses any in-flight Animalese audio + halts
-  // the typewriter.
+  // Silence everything else so the lizard king audio is unobstructed.
   muteBgMusic();
   cancelAnimalese();
 
-  // Swap the goose's animated GIF for the static PNG so the goose holds
-  // perfectly still while we zoom. We snapshot the original src to restore
-  // it once the cinematic ends.
+  // Swap the GIF for the static frame so the goose holds perfectly still.
   const gooseImg = goose.querySelector('img');
   const originalSrc = gooseImg ? gooseImg.src : null;
   if (gooseImg) gooseImg.src = 'assets/img/goose-still.png';
 
-  const facing = currentDirTransform(goose);
   const originalZ = getComputedStyle(goose).zIndex;
-  const elemHeight = goose.offsetHeight || 70;
-  // Head sits roughly at 22% from the top of the goose sprite. Translating
-  // down by (50% - 22%) of element height lets the head land at viewport
-  // centre when scale jumps from origin-centre to origin-head.
-  const headTranslateY = elemHeight * 0.28;
+  const elemW = goose.offsetWidth  || 72;
+  const elemH = goose.offsetHeight || 72;
 
-  // Snapshot any in-flight transition; we want a clean baseline to animate from
+  // Kill any in-flight walk transition AND override the goose's position to
+  // viewport centre. The walk loop's pending setTimeout is harmless now —
+  // beginGooseVisit / walkGooseTo / pauseAndAct all bail on cinematicActive.
   goose.style.transition = 'none';
+  goose.style.left = `${window.innerWidth  / 2 - elemW / 2}px`;
+  goose.style.top  = `${window.innerHeight / 2 - elemH / 2}px`;
   goose.style.transformOrigin = '50% 50%';
-  goose.style.transform = facing;
+  goose.style.transform = 'scaleX(1)'; // forward-facing for the cinematic
 
   const blackout = document.createElement('div');
   blackout.className = 'lizard-king-blackout';
   document.body.appendChild(blackout);
 
-  // Lift goose above the blackout
   goose.style.zIndex = '500';
 
-  // Force layout flush before kicking off the animations
+  // Force layout flush so the centred-state position is committed before
+  // the next paint applies the long transition.
   void blackout.offsetHeight;
   void goose.offsetHeight;
 
   blackout.classList.add('is-on');
   playLizardKing();
 
-  // Translate to viewport centre + scale up over (duration - hold) seconds
-  const rect = goose.getBoundingClientRect();
-  const dx = window.innerWidth  / 2 - (rect.left + rect.width  / 2);
-  const dy = window.innerHeight / 2 - (rect.top  + rect.height / 2);
   const zoomMs = LIZARD_DURATION_MS - LIZARD_HOLD_MS;
 
-  // Phase 1 — slow zoom
+  // Phase 1 — slow zoom from scale 1 to scale 6 (no translate; goose is
+  // already centred via left/top)
   goose.style.transition = `transform ${zoomMs}ms ease-in-out`;
-  goose.style.transform = `translate(${dx}px, ${dy}px) ${facing} scale(6)`;
+  goose.style.transform = 'scaleX(1) scale(6)';
 
-  // Phase 2 — hard cut to a deep face zoom. transform-origin moves to the
-  // head so scale grows around it, and we translate down to keep the head
-  // at viewport centre.
+  // Phase 2 — hard cut to ridiculous face zoom.
+  // transform-origin '50% 30%' picks the goose's face area on the sprite.
+  // translate-y compensates so that point ends up at viewport centre.
+  // Scale 30 makes the face fill most of the screen.
   setTimeout(() => {
     if (!cinematicActive) return;
     goose.style.transition = 'none';
-    goose.style.transformOrigin = '50% 22%';
-    goose.style.transform =
-      `translate(${dx}px, ${dy + headTranslateY}px) ${facing} scale(22)`;
+    goose.style.transformOrigin = '50% 30%';
+    const faceTranslateY = elemH * 0.20; // (50% − 30%) of element height
+    goose.style.transform = `translate(0px, ${faceTranslateY}px) scaleX(1) scale(30)`;
   }, zoomMs);
 
-  // Phase 4 — fade back to normal at total duration
+  // Phase 4 — fade back at total duration
   setTimeout(() => {
     blackout.classList.remove('is-on');
     goose.style.transition = 'transform 0.55s ease-out';
     goose.style.transformOrigin = '50% 50%';
-    goose.style.transform = facing;
+    goose.style.transform = 'scaleX(1)';
     setTimeout(() => {
       blackout.remove();
       goose.style.zIndex = originalZ === 'auto' ? '40' : originalZ;
-      // Restore the animated GIF (cache-bust so it restarts from frame 0).
       if (gooseImg && originalSrc) {
         gooseImg.src = originalSrc.includes('?')
           ? originalSrc
           : `${originalSrc.split('?')[0]}?t=${Date.now()}`;
       }
       cinematicActive = false;
-      // Audio fades back in
       unmuteBgMusic();
+      // Reset goose direction so the next walk picks correctly
+      goose.dataset.facing = 'right';
+      // Schedule a fresh visit since the walk loop bailed during cinematic
+      setTimeout(() => beginGooseVisit(goose), 30_000 + Math.random() * 60_000);
     }, 650);
   }, LIZARD_DURATION_MS);
 }
@@ -508,7 +503,7 @@ function setDir(el, isRight) {
 }
 
 async function beginGooseVisit(goose) {
-  if (goosePanicking) return;
+  if (goosePanicking || cinematicActive) return;
 
   // Enter from a random side, vertical somewhere in the lower 70% of viewport
   const enterRight = Math.random() < 0.5;
@@ -523,13 +518,13 @@ async function beginGooseVisit(goose) {
   // Visit 4-6 random points so the goose lingers longer
   const stops = 4 + Math.floor(Math.random() * 3);
   for (let i = 0; i < stops; i++) {
-    if (goosePanicking) return;
+    if (goosePanicking || cinematicActive) return;
     await walkGooseTo(goose, randomTargetInViewport());
-    if (goosePanicking) return;
+    if (goosePanicking || cinematicActive) return;
     await pauseAndAct(goose);
   }
 
-  if (goosePanicking) return;
+  if (goosePanicking || cinematicActive) return;
 
   // Exit by walking offscreen on a random side
   const exitX = Math.random() < 0.5 ? -200 : window.innerWidth + 60;
@@ -551,7 +546,7 @@ function randomTargetInViewport() {
 
 function walkGooseTo(goose, target) {
   return new Promise((resolve) => {
-    if (goosePanicking) { resolve(); return; }
+    if (goosePanicking || cinematicActive) { resolve(); return; }
     setSprite(goose, 'walk');
     const fromX = goose.offsetLeft;
     const fromY = goose.offsetTop;
@@ -577,7 +572,7 @@ function walkGooseTo(goose, target) {
 
 function pauseAndAct(goose) {
   return new Promise((resolve) => {
-    if (goosePanicking) { resolve(); return; }
+    if (goosePanicking || cinematicActive) { resolve(); return; }
 
     // Pick a random pause pose from the sprite set so each stop looks different
     const pose = PAUSE_POSES[Math.floor(Math.random() * PAUSE_POSES.length)];
