@@ -1,6 +1,7 @@
 import { playPerry, playPerryTheme, playQuack, playQuackVarying, playBomboclaat, playExplosion, playCreeperHiss, playDoofJingle, playLizardKing, playDwightSlut, playTwss } from './audio.js';
 import { showToast } from './toast.js';
 import { silence as silenceBgMusic, mute as muteBgMusic, unmute as unmuteBgMusic } from './bg-music.js';
+import { cancelAnimalese } from './animalese.js';
 import { recordBomb } from './resetti-scold.js';
 import { addMiles, awardAchievement } from './nook-miles.js';
 
@@ -384,8 +385,19 @@ function lizardKingSequence(goose) {
   if (cinematicActive) return;
   cinematicActive = true;
 
-  // Silence everything else immediately so the lizard king audio stands alone.
+  // Silence ALL audio immediately so the lizard king audio stands alone.
+  // bg-music ducks via mute(); Tom Nook's bubble narration is cut off via
+  // cancelAnimalese() which pauses any in-flight Animalese audio + halts
+  // the typewriter.
   muteBgMusic();
+  cancelAnimalese();
+
+  // Swap the goose's animated GIF for the static PNG so the goose holds
+  // perfectly still while we zoom. We snapshot the original src to restore
+  // it once the cinematic ends.
+  const gooseImg = goose.querySelector('img');
+  const originalSrc = gooseImg ? gooseImg.src : null;
+  if (gooseImg) gooseImg.src = 'assets/img/goose-still.png';
 
   const facing = currentDirTransform(goose);
   const originalZ = getComputedStyle(goose).zIndex;
@@ -444,6 +456,12 @@ function lizardKingSequence(goose) {
     setTimeout(() => {
       blackout.remove();
       goose.style.zIndex = originalZ === 'auto' ? '40' : originalZ;
+      // Restore the animated GIF (cache-bust so it restarts from frame 0).
+      if (gooseImg && originalSrc) {
+        gooseImg.src = originalSrc.includes('?')
+          ? originalSrc
+          : `${originalSrc.split('?')[0]}?t=${Date.now()}`;
+      }
       cinematicActive = false;
       // Audio fades back in
       unmuteBgMusic();
