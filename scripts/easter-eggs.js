@@ -440,15 +440,16 @@ function lizardKingSequence(goose) {
   goose.style.transition = `transform ${zoomMs}ms ease-in-out`;
   goose.style.transform = 'scaleX(1) scale(6)';
 
-  // Phase 2 — hard cut: scale down a touch to scale 18, push the goose
-  // physically up the screen so the face lands in the upper third (where
-  // the user wants it), origin at the face on the sprite.
+  // Phase 2 — hard cut: face zoom shifted UP and LEFT so it lands in the
+  // upper-left quadrant rather than dead-centre.
   setTimeout(() => {
     if (!cinematicActive) return;
     goose.style.transition = 'none';
     goose.style.transformOrigin = '50% 35%';
-    const faceTranslateY = -elemH * 1.0; // shift the goose UP a full elemH
-    goose.style.transform = `translate(0px, ${faceTranslateY}px) scaleX(1) scale(18)`;
+    const faceTranslateX = -elemW * 0.5; // shift LEFT half an element width
+    const faceTranslateY = -elemH * 1.4; // shift UP 140% of element height
+    goose.style.transform =
+      `translate(${faceTranslateX}px, ${faceTranslateY}px) scaleX(1) scale(18)`;
   }, zoomMs);
 
   // Phase 4 — fade back at total duration
@@ -467,13 +468,18 @@ function lizardKingSequence(goose) {
           ? originalSrc
           : `${originalSrc.split('?')[0]}?t=${Date.now()}`;
       }
+      // Move the goose off-screen instantly — otherwise it sits stuck in
+      // the middle of the page until the next visit fires.
+      goose.style.transition = 'none';
+      goose.style.left = '-300px';
+      goose.style.top  = '-300px';
       cinematicActive = false;
       unmuteBgMusic();
       goose.dataset.facing = 'right';
       // Tell main.js to resume narrator rotation
       document.dispatchEvent(new CustomEvent('cinematic-end'));
-      // Schedule a fresh visit since the walk loop bailed during cinematic
-      setTimeout(() => beginGooseVisit(goose), 30_000 + Math.random() * 60_000);
+      // Schedule a fresh visit so the goose comes back from a side
+      setTimeout(() => beginGooseVisit(goose), 20_000 + Math.random() * 30_000);
     }, 650);
   }, LIZARD_DURATION_MS);
 }
