@@ -1,6 +1,7 @@
 import { FLIGHTS } from '../data/flights.js';
 import { computeState, computeJourneyProgress, computeMilesEarned } from './flight-state.js';
 import { narrate, randomNookQuote } from './nook-narrator.js';
+import { typeAnimalese, cancelAnimalese } from './animalese.js';
 import { formatCountdown } from './countdown.js';
 import { initEasterEggs, spawnConfetti } from './easter-eggs.js';
 import { initMessages } from './messages.js';
@@ -32,9 +33,12 @@ function init() {
     narratorMode = narratorMode === 'state' ? 'quote' : 'state';
     if (narratorMode === 'quote') {
       currentQuote = randomNookQuote();
-      setText('nook-bubble', currentQuote);
+      const bubble = document.getElementById('nook-bubble');
+      if (bubble) typeAnimalese(bubble, currentQuote);
+    } else {
+      // Cancel the Animalese typewriter so the state line takes over cleanly.
+      cancelAnimalese();
     }
-    // When mode flips back to 'state', the next tick (≤1s) refreshes naturally.
   }, NARRATOR_SWITCH_MS);
 }
 

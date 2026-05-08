@@ -51,6 +51,38 @@ export function playBomboclaat() {
   else fallbackBeep(110, 0.5); // deep rumble fallback
 }
 
+// === Animalese: short pitched blip per character, à la AC dialogue ===
+//
+// Each letter gets a low-octave square-wave blip whose pitch varies in a
+// pentatonic scale based on the character. Tom Nook gets a deeper voice; this
+// is tuned around G3 so it reads as "raccoon shopkeeper" not "chipmunk".
+const PENTATONIC = [0, 2, 4, 7, 9];
+export function playNookAnimaleseChar(char) {
+  if (!/[a-zA-Z]/.test(char)) return;
+  const c = ac(); if (!c) return;
+  // Resume if the context is suspended (autoplay policy)
+  if (c.state === 'suspended' && c.resume) c.resume().catch(() => {});
+  try {
+    const code = char.toLowerCase().charCodeAt(0) - 97;
+    const semitones = PENTATONIC[Math.abs(code) % PENTATONIC.length] - 5;
+    const pitch = 196 /* G3 */ * Math.pow(2, semitones / 12);
+
+    const osc = c.createOscillator();
+    const gain = c.createGain();
+    osc.type = 'square';
+    osc.frequency.value = pitch;
+
+    const t = c.currentTime;
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(0.05, t + 0.005);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+
+    osc.connect(gain).connect(c.destination);
+    osc.start(t);
+    osc.stop(t + 0.08);
+  } catch { /* ignore — context may not be ready */ }
+}
+
 // === Mi bombo: drum-roll-style anticipation cue ===
 export function playMiBombo() {
   const audio = load('miBombo');
