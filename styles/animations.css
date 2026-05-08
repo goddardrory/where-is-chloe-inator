@@ -1,0 +1,124 @@
+/* === Falling leaves === */
+@keyframes leaf-fall {
+  0%   { transform: translate(0, -30px) rotate(0deg);   opacity: 0; }
+  10%  { opacity: 0.7; }
+  100% { transform: translate(var(--drift, 30px), 110vh) rotate(var(--spin, 720deg)); opacity: 0.3; }
+}
+
+.leaf {
+  animation: leaf-fall var(--duration, 16s) linear var(--delay, 0s) infinite;
+  left: var(--x, 50%);
+}
+
+/* === Rogue duck waddle === */
+@keyframes waddle-across {
+  0%   { left: -60px; transform: translateY(0) rotate(-2deg); }
+  10%  { transform: translateY(-4px) rotate(2deg); }
+  20%  { transform: translateY(0) rotate(-2deg); }
+  30%  { transform: translateY(-4px) rotate(2deg); }
+  40%  { transform: translateY(0) rotate(-2deg); }
+  50%  { transform: translateY(-4px) rotate(2deg); }
+  60%  { transform: translateY(0) rotate(-2deg); }
+  70%  { transform: translateY(-4px) rotate(2deg); }
+  80%  { transform: translateY(0) rotate(-2deg); }
+  90%  { transform: translateY(-4px) rotate(2deg); }
+  100% { left: 110vw; transform: translateY(0) rotate(-2deg); }
+}
+
+/* === Active flight card subtle pulse === */
+@keyframes card-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(245, 197, 24, 0.25), 0 4px 16px rgba(91, 184, 92, 0.2); }
+  50%      { box-shadow: 0 0 0 6px rgba(245, 197, 24, 0.4),  0 4px 16px rgba(91, 184, 92, 0.2); }
+}
+
+.flight-card.active { animation: card-pulse 2.4s ease-in-out infinite; }
+
+/* === Active status pill pulse === */
+@keyframes pill-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.06); }
+}
+
+.status-pill.active { animation: pill-pulse 1.8s ease-in-out infinite; }
+
+/* === Plane gentle bob on progress bar === */
+@keyframes plane-bob {
+  0%, 100% { transform: translateY(-50%) rotate(-2deg); }
+  50%      { transform: translateY(calc(-50% - 2px)) rotate(2deg); }
+}
+
+.progress-plane { animation: plane-bob 2s ease-in-out infinite; }
+
+/* === Toast entrance === */
+@keyframes toast-in {
+  0%   { opacity: 0; transform: translateY(-12px) scale(0.96); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes toast-out {
+  0%   { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-12px) scale(0.96); }
+}
+
+.toast { animation: toast-in 0.3s cubic-bezier(.2,.8,.2,1) both; }
+.toast.leaving { animation: toast-out 0.3s ease-in both; }
+
+/* === Doofenshmirtz overlay entrance === */
+@keyframes doof-fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes doof-content-in {
+  0%   { opacity: 0; transform: scale(0.5) rotate(-8deg); }
+  60%  { transform: scale(1.05) rotate(2deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+.doof-overlay { animation: doof-fade-in 0.3s ease-out both; }
+.doof-content { animation: doof-content-in 0.6s cubic-bezier(.34,1.56,.64,1) both; }
+
+/* === Nook bubble subtle wobble === */
+@keyframes nook-wobble {
+  0%, 100% { transform: rotate(0deg); }
+  25%      { transform: rotate(-0.8deg); }
+  75%      { transform: rotate(0.8deg); }
+}
+
+.nook-bubble { animation: nook-wobble 5s ease-in-out infinite; transform-origin: 0 50%; }
+
+/* === Confetti for arrival === */
+@keyframes confetti-fall {
+  0%   { transform: translateY(-20vh) rotate(0deg);   opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+
+.confetti {
+  position: fixed;
+  top: -20px;
+  font-size: 22px;
+  z-index: 150;
+  pointer-events: none;
+  animation: confetti-fall 3.5s linear forwards;
+}
+
+/* === Hero title hover === */
+.hero-title {
+  transition: transform 0.2s;
+}
+
+.hero-title:hover { transform: scale(1.02); }
+.hero-title:active { transform: scale(0.99); }
+
+/* === Reduced motion === */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .leaf, .rogue-duck, .progress-plane { display: none !important; }
+  .flight-card.active { animation: none; }
+  .status-pill.active { animation: none; }
+  .nook-bubble { animation: none; }
+}

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex,nofollow" />
+  <meta name="theme-color" content="#b4e8f0" />
+  <meta name="description" content="Tracking Chloe's flight from Seattle to Durban" />
+
+  <title>Where is Chloe?</title>
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A6%9D%3C/text%3E%3C/svg%3E" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Caveat:wght@600&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles/main.css" />
+  <link rel="stylesheet" href="styles/animations.css" />
+  <link rel="stylesheet" href="styles/responsive.css" />
+</head>
+<body>
+
+  <div class="leaves" id="leaves" aria-hidden="true"></div>
+
+  <main class="container">
+
+    <!-- HERO -->
+    <header class="hero" aria-label="Current journey status">
+      <div class="hero-inner">
+        <div class="hero-eyebrow">NOOK INC. TRAVEL BUREAU</div>
+        <h1 class="hero-title" id="logo" tabindex="0" role="button" aria-label="Where is Chloe? Click for surprise">
+          Where is <span class="hero-name">Chloe</span>?
+        </h1>
+
+        <div class="nook-row">
+          <div class="nook-avatar" aria-hidden="true">🦝</div>
+          <div class="nook-bubble" id="nook-bubble">
+            Hooo! Welcome traveler, yes yes! Let me see where Chloe is, hm-hmm…
+          </div>
+        </div>
+
+        <div class="status-row">
+          <div class="status-line" id="status-line">Loading status…</div>
+          <div class="miles-chip" id="miles-chip" aria-label="Nook Miles earned">
+            <span class="miles-star">★</span>
+            <span class="miles-count" id="miles-count">0</span>
+            <span class="miles-label">Nook Miles</span>
+          </div>
+        </div>
+
+        <div class="progress-wrapper" aria-label="Journey progress">
+          <div class="progress-track">
+            <div class="progress-fill" id="progress-fill" style="width: 0%">
+              <div class="progress-plane" aria-hidden="true">✈️</div>
+            </div>
+          </div>
+          <div class="progress-endpoints">
+            <span>SEA</span>
+            <span class="progress-percent" id="progress-percent">0%</span>
+            <span>DUR</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- LIVE TRACKER CARD -->
+    <section class="map-section" aria-label="Live flight tracker">
+      <div class="section-label">LIVE FLIGHT TRACKER</div>
+      <div class="tracker-card" id="tracker-card">
+        <div class="tracker-route" id="tracker-route">
+          <div class="tracker-pin" data-end="from">
+            <span class="tracker-pin-dot"></span>
+            <span class="tracker-pin-label" id="tracker-from">SEA</span>
+          </div>
+          <div class="tracker-line">
+            <svg class="tracker-arc" viewBox="0 0 200 60" preserveAspectRatio="none" aria-hidden="true">
+              <path d="M 4 50 Q 100 -20, 196 50" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 4" />
+            </svg>
+            <div class="tracker-plane" id="tracker-plane" aria-hidden="true">✈️</div>
+          </div>
+          <div class="tracker-pin" data-end="to">
+            <span class="tracker-pin-dot"></span>
+            <span class="tracker-pin-label" id="tracker-to">JFK</span>
+          </div>
+        </div>
+        <div class="tracker-meta">
+          <div class="tracker-flight" id="tracker-flight">AS 0022</div>
+          <div class="tracker-detail" id="tracker-detail">Awaiting departure</div>
+        </div>
+        <a class="tracker-cta" id="tracker-cta" href="#" target="_blank" rel="noopener noreferrer">
+          Open Live Tracker on FlightAware
+          <span class="tracker-cta-arrow" aria-hidden="true">→</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- LAYOVER COUNTDOWN (conditionally shown) -->
+    <section class="layover-section" id="layover-section" hidden aria-live="polite">
+      <div class="layover-card">
+        <div class="layover-banner">🥨 PRETZEL DAY 🥨</div>
+        <div class="layover-title">On layover at <span id="layover-airport">JFK</span></div>
+        <div class="layover-timer" id="layover-timer">--:--:--</div>
+        <div class="layover-sub">until next departure</div>
+        <div class="layover-nook">"Resting safely, yes yes. Loan repayment unaffected, hooo."</div>
+      </div>
+    </section>
+
+    <!-- FLIGHT CARDS -->
+    <section class="flights-section" aria-label="Flight legs">
+      <div class="section-label">JOURNEY ITINERARY</div>
+      <div class="flight-cards" id="flight-cards">
+        <!-- populated by main.js -->
+      </div>
+    </section>
+
+    <!-- MESSAGE WALL -->
+    <section class="messages-section" aria-label="Family messages">
+      <div class="section-label">FAMILY MESSAGE WALL 🍃</div>
+
+      <form
+        name="messages"
+        method="POST"
+        data-netlify="true"
+        netlify-honeypot="bot-field"
+        class="message-form"
+        id="message-form"
+      >
+        <input type="hidden" name="form-name" value="messages" />
+        <p class="hp-field"><label>Don't fill this: <input name="bot-field" /></label></p>
+        <div class="form-row">
+          <input
+            type="text"
+            name="name"
+            id="message-name"
+            placeholder="Your name"
+            maxlength="40"
+            required
+            autocomplete="name"
+          />
+        </div>
+        <div class="form-row">
+          <textarea
+            name="message"
+            id="message-text"
+            placeholder="Safe travels, Chloe!"
+            maxlength="280"
+            required
+            rows="2"
+          ></textarea>
+        </div>
+        <div class="form-row form-row-end">
+          <span class="char-counter" id="char-counter">0 / 280</span>
+          <button type="submit" class="submit-btn">Send Message ✨</button>
+        </div>
+      </form>
+
+      <div class="messages-feed" id="messages-feed" aria-live="polite">
+        <div class="messages-empty">No messages yet, hooo. Be the first!</div>
+      </div>
+    </section>
+
+    <!-- TRIVIA TICKER -->
+    <footer class="trivia-footer" aria-label="Rotating trivia">
+      <div class="trivia-label">📜</div>
+      <div class="trivia-text" id="trivia-text">Loading wisdom…</div>
+    </footer>
+
+  </main>
+
+  <!-- FLOATING AUDIO CONTROL -->
+  <div class="audio-control" id="audio-control" role="region" aria-label="Audio controls">
+    <button class="audio-btn" id="perry-btn" type="button" aria-label="Click for surprise sound">
+      <span class="audio-emoji">🕵️</span>
+    </button>
+    <button class="audio-toggle" id="kk-toggle" type="button" aria-label="Toggle background music" aria-pressed="false">
+      <span class="audio-toggle-on">🎵</span>
+      <span class="audio-toggle-off">🔇</span>
+    </button>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div class="toast-container" id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- ROGUE DUCK -->
+  <div class="rogue-duck" id="rogue-duck" aria-hidden="true" tabindex="-1">🦆</div>
+
+  <!-- DOOFENSHMIRTZ OVERLAY -->
+  <div class="doof-overlay" id="doof-overlay" hidden aria-hidden="true">
+    <div class="doof-content">
+      <div class="doof-emoji">🧪</div>
+      <div class="doof-title">BEHOLD! THE WHERE-IS-CHLOE-INATOR!</div>
+      <div class="doof-sub">— Dr. Heinz Doofenshmirtz</div>
+    </div>
+  </div>
+
+  <script type="module" src="scripts/main.js"></script>
+</body>
+</html>

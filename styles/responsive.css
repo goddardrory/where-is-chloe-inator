@@ -1,0 +1,78 @@
+/* Mobile-first defaults are in main.css. These are progressive enhancements. */
+
+/* === TABLET (>= 640px) === */
+@media (min-width: 640px) {
+  .container { padding: 24px; }
+
+  .hero-inner { padding: 28px 30px 30px; }
+
+  .map-frame { height: 440px; }
+
+  .flight-card {
+    grid-template-columns: auto 1fr auto auto;
+    gap: 16px;
+    padding: 16px 20px;
+  }
+
+  .flight-icon { width: 44px; height: 44px; font-size: 22px; }
+
+  .audio-control {
+    right: 24px;
+    bottom: 24px;
+  }
+}
+
+/* === DESKTOP (>= 1024px) === */
+@media (min-width: 1024px) {
+  .container { padding: 32px; }
+
+  .hero {
+    /* slightly larger hero band */
+  }
+
+  .hero-inner { padding: 36px 40px 36px; }
+
+  .nook-bubble { font-size: 15px; }
+
+  .status-line { font-size: 18px; }
+
+  /* Two-column for map + active flight context */
+  .map-section {
+    margin-top: 8px;
+  }
+
+  .map-frame { height: 500px; }
+
+  .flight-cards {
+    /* keep stacked for clarity at all widths */
+  }
+
+  .messages-feed {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+}
+
+/* === EXTRA-LARGE (>= 1280px) === */
+@media (min-width: 1280px) {
+  .container { max-width: 1080px; }
+}
+
+/* === HOVER-CAPABLE devices: enable lift effects === */
+@media (hover: hover) {
+  .flight-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(91, 184, 92, 0.25);
+  }
+}
+
+/* === Print (rare but cheap) === */
+@media print {
+  .audio-control,
+  .rogue-duck,
+  .leaves,
+  .toast-container,
+  .doof-overlay,
+  .map-frame { display: none !important; }
+}
