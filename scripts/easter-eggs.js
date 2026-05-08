@@ -280,15 +280,17 @@ export function spawnConfetti(count = 40) {
   }
 }
 
-function spawnFlyBy(emoji, imgPath) {
+export function spawnFlyBy(emoji, imgPath, opts = {}) {
+  const heightPx = opts.heightPx || 280;
   const el = document.createElement('div');
   Object.assign(el.style, {
     position: 'fixed',
-    left: '-80px',
-    top: `${20 + Math.random() * 40}vh`,
+    left: `-${heightPx + 40}px`,
+    top: `${10 + Math.random() * 35}vh`,
     fontSize: '40px',
     zIndex: '100',
     pointerEvents: 'none',
+    filter: 'drop-shadow(0 8px 18px rgba(0, 0, 0, 0.25))',
     transition: 'left 2.4s linear, transform 0.4s ease-in-out',
   });
 
@@ -297,12 +299,18 @@ function spawnFlyBy(emoji, imgPath) {
     const img = document.createElement('img');
     img.src = imgPath;
     img.alt = '';
-    img.style.height = '52px';
+    img.style.height = `${heightPx}px`;
     img.style.width = 'auto';
-    img.addEventListener('error', () => { el.replaceChildren(); el.textContent = emoji; }, { once: true });
+    img.style.display = 'block';
+    img.addEventListener('error', () => {
+      el.replaceChildren();
+      el.textContent = emoji;
+      el.style.fontSize = `${Math.round(heightPx * 0.7)}px`;
+    }, { once: true });
     el.appendChild(img);
   } else {
     el.textContent = emoji;
+    el.style.fontSize = `${Math.round(heightPx * 0.7)}px`;
   }
 
   document.body.appendChild(el);

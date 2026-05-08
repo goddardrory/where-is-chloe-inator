@@ -5,7 +5,7 @@ import { typeAnimalese, cancelAnimalese, preloadAcedio, whenAcedioReady } from '
 import { start as startBgMusic } from './bg-music.js';
 import { isOwed as isResettiOwed, showScold as showResettiScold } from './resetti-scold.js';
 import { formatCountdown } from './countdown.js';
-import { initEasterEggs, spawnConfetti, whenInitialDoofClosed } from './easter-eggs.js';
+import { initEasterEggs, spawnConfetti, whenInitialDoofClosed, spawnFlyBy } from './easter-eggs.js';
 import { initMessages } from './messages.js';
 import { initTrivia } from './trivia.js';
 import { showToast } from './toast.js';
@@ -290,7 +290,10 @@ function initAudioControls() {
   const kkToggle = document.getElementById('kk-toggle');
 
   if (perryBtn) {
-    perryBtn.addEventListener('click', () => playPerry());
+    perryBtn.addEventListener('click', () => {
+      playPerry();
+      spawnFlyBy('🕵️', 'assets/img/perry.png', { heightPx: 280 });
+    });
   }
   if (kkToggle) {
     kkToggle.addEventListener('click', () => {
