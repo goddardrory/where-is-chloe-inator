@@ -435,10 +435,11 @@ function lizardKingSequence(goose) {
 
   const zoomMs = LIZARD_DURATION_MS - LIZARD_HOLD_MS;
 
-  // Phase 1 — slow zoom from scale 1 to scale 6 (no translate; goose is
-  // already centred via left/top)
+  // Phase 1 — slow zoom from scale 1 to scale 6 with a modest upward drift
+  // so the goose ends up a touch above viewport centre by the end of the
+  // zoom (tees up nicely for the upper-left face zoom in phase 2).
   goose.style.transition = `transform ${zoomMs}ms ease-in-out`;
-  goose.style.transform = 'scaleX(1) scale(6)';
+  goose.style.transform = `translate(0px, -${elemH * 0.7}px) scaleX(1) scale(6)`;
 
   // Phase 2 — hard cut: face zoom shifted UP and LEFT so it lands in the
   // upper-left quadrant rather than dead-centre.
