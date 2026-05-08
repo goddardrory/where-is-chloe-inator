@@ -1,4 +1,4 @@
-import { playPerry, playPerryTheme, playQuack, playBomboclaat, playMiBombo, playExplosion } from './audio.js';
+import { playPerry, playPerryTheme, playQuack, playBomboclaat, playExplosion, playCreeperHiss, playDoofJingle } from './audio.js';
 import { showToast } from './toast.js';
 import { silence as silenceBgMusic } from './bg-music.js';
 import { recordBomb } from './resetti-scold.js';
@@ -129,6 +129,7 @@ function showDoof(forceId) {
     }
 
     overlay.classList.add('is-open');
+    playDoofJingle();
 
     let closed = false;
     const close = () => {
@@ -189,8 +190,13 @@ function detonate() {
   // Resetti, and the escalation level reflects the latest detonation.
   recordBomb();
 
-  playMiBombo();
+  // Sequence: creeper hiss (~2.9s) → bomboclaat lands at the apex →
+  // explosion sound + visual blast.
+  playCreeperHiss();
   document.body.classList.add('pre-explode-shake');
+
+  // Bomboclaat fires near the end of the creeper hiss for the punctuation.
+  setTimeout(() => playBomboclaat(), 2100);
 
   setTimeout(() => {
     document.body.classList.remove('pre-explode-shake');
@@ -222,22 +228,17 @@ function initRogueDuck() {
   const duck = document.getElementById('rogue-duck');
   if (!duck) return;
 
-  duck.addEventListener('click', () => {
-    // 1-in-4 chance the duck says BOMBOCLAAT instead of quacking.
-    if (Math.random() < 0.25) {
-      playBomboclaat();
-      showToast('🦆 …did that duck just—?', '', 2200);
-    } else {
-      playQuack();
-    }
-  });
+  // Click-quack stays so kids can spam it.
+  duck.addEventListener('click', () => playQuack());
 
-  // First waddle 30s after load, then every 3-4 minutes
+  // First waddle 30s after load, then every 3-4 minutes. Each appearance
+  // announces itself with a cute quack.
   const start = () => {
     duck.classList.remove('waddling');
     // force reflow so the animation restarts cleanly
     void duck.offsetWidth;
     duck.classList.add('waddling');
+    playQuack();
     const next = 180000 + Math.random() * 60000;
     setTimeout(start, next);
   };

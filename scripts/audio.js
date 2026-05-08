@@ -5,13 +5,15 @@
 import { duck, unduck } from './bg-music.js';
 
 const SOURCES = {
-  perryyy:    'assets/audio/perryyy.mp3',
-  perryTheme: 'assets/audio/perry-theme.mp3',
-  quack:      'assets/audio/quack.mp3',
-  kkAirline:  'assets/audio/kk-airline.mp3',
-  bomboclaat: 'assets/audio/bomboclaat.mp3',
-  miBombo:    'assets/audio/mi-bombo.mp3',
-  explosion:  'assets/audio/explosion.mp3',
+  perryyy:     'assets/audio/perryyy.mp3',
+  perryTheme:  'assets/audio/perry-theme.mp3',
+  quack:       'assets/audio/quack.mp3',
+  kkAirline:   'assets/audio/kk-airline.mp3',
+  bomboclaat:  'assets/audio/bomboclaat.mp3',
+  miBombo:     'assets/audio/mi-bombo.mp3',
+  explosion:   'assets/audio/explosion.mp3',
+  creeperHiss: 'assets/audio/creeper-hiss.mp3',
+  doofJingle:  'assets/audio/doof-jingle.mp3',
 };
 
 const cache = {};
@@ -96,6 +98,38 @@ export function playMiBombo() {
   for (let i = 0; i < 8; i++) {
     setTimeout(() => fallbackBeep(60 + i * 8, 0.07), i * 180);
   }
+}
+
+// === Creeper hiss: build-up before the boom ===
+export function playCreeperHiss() {
+  const audio = load('creeperHiss');
+  if (audio) {
+    const inst = audio.cloneNode();
+    tryPlay(inst);
+    return inst;
+  }
+  // Synth fallback: rising hiss via white-noise band
+  const c = ac(); if (!c) return null;
+  duckFor(2500);
+  const len = Math.floor(c.sampleRate * 2.8);
+  const buf = c.createBuffer(1, len, c.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) {
+    const ramp = i / len; // gain ramps up over the duration
+    data[i] = (Math.random() * 2 - 1) * 0.25 * ramp;
+  }
+  const noise = c.createBufferSource();
+  noise.buffer = buf;
+  noise.connect(c.destination);
+  noise.start();
+  return null;
+}
+
+// === Doof jingle: plays when the Doof overlay opens ===
+export function playDoofJingle() {
+  const audio = load('doofJingle');
+  if (audio) tryPlay(audio.cloneNode(), () => fallbackMelody());
+  else fallbackMelody();
 }
 
 // === Explosion: white-noise burst ===
