@@ -19,7 +19,14 @@ const MAX_DELTA  = 5000;
 exports.handler = async (event) => {
   let store;
   try {
-    store = getStore(STORE_NAME);
+    // V1 (legacy) functions don't get auto-context for Blobs — supply the
+    // siteID + token explicitly using the env vars we already set for the
+    // get-messages function.
+    store = getStore({
+      name: STORE_NAME,
+      siteID: process.env.NETLIFY_SITE_ID,
+      token: process.env.NETLIFY_FORMS_TOKEN,
+    });
   } catch (err) {
     return json(500, { error: 'Blobs unavailable', detail: String(err) });
   }
