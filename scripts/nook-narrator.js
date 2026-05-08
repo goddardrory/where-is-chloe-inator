@@ -23,6 +23,15 @@ export const NOOK_QUOTES = [
   // ✨ The two amazing hilarious additions ✨
   'Hm-hmm, did you know? The interest on your interest accrues interest, yes yes! It\'s loans all the way down, hooo!',
   'Hooo! "Nook" is short for "Nookington," yes yes. …it is not. I made that up just now. But doesn\'t it sound expensive, hm-hmm?',
+  // === More loan / debt jokes per request ===
+  'Welcome to the Nook Inc. frequent-borrower programme, yes yes! Your FIRST missed payment is on the house, hooo!',
+  'Have you considered taking out a second loan to repay the first, hm-hmm? Very tidy. Very efficient. Very expensive, yes yes.',
+  'Hooo! The good news is the loan is interest-free, yes yes. The bad news is I made up the good news.',
+  'Yes yes, the terms are simple: you pay forever. That IS simple, hm-hmm. Quite simple.',
+  'I have a bridge loan, an air-bridge loan, and a bridge-of-bridges loan. Whichever you fancy, hooo!',
+  'Hooo! Hidden fees, you ask? Yes yes — they were hidden, that is rather the point. See page 47 of the contract, hm-hmm.',
+  'Tom Nook says: "A loan a day keeps Resetti away." …that is incorrect, hooo. But it does rhyme, yes yes.',
+  'Hm-hmm, the airline meal is on the house. The plate is 49,800 Bells, hooo. Just the plate.',
 ];
 
 export function randomNookQuote() {
