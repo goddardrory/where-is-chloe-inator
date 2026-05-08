@@ -239,8 +239,9 @@ function initRogueDuck() {
   const goose = document.getElementById('rogue-duck');
   if (!goose) return;
 
-  // Try to swap the emoji for a goose image if the user has one
-  swapToImageIfPresent(goose, 'assets/img/goose.png');
+  // Try to swap the emoji for a goose sprite. Prefer the animated GIF;
+  // fall back to a static PNG if only that is supplied.
+  swapToImageIfPresent(goose, ['assets/img/goose.gif', 'assets/img/goose.png']);
 
   // Position absolutely — leave the existing CSS in place but JS will override
   goose.style.position = 'fixed';
@@ -376,21 +377,30 @@ function dropGift(goose) {
   setTimeout(() => gift.remove(), 12000);
 }
 
-// Replace the goose element's contents with an <img> if the file is present.
+// Replace the goose element's contents with an <img> if a sprite is present.
+// Accepts a string path or an array of candidate paths (tried in order).
 // Falls back silently to whatever it already shows (the duck emoji).
 function swapToImageIfPresent(el, src) {
-  const img = new Image();
-  img.onload = () => {
-    el.replaceChildren();
-    img.style.height = '60px';
-    img.style.width = 'auto';
-    img.style.display = 'block';
-    img.style.pointerEvents = 'none';
-    el.appendChild(img);
-    el.style.fontSize = '0';
+  const candidates = Array.isArray(src) ? src.slice() : [src];
+  const tryNext = () => {
+    if (!candidates.length) return;
+    const path = candidates.shift();
+    const img = new Image();
+    img.onload = () => {
+      el.replaceChildren();
+      img.style.height = '72px';
+      img.style.width = 'auto';
+      img.style.display = 'block';
+      img.style.pointerEvents = 'none';
+      img.style.imageRendering = 'pixelated';
+      img.alt = '';
+      el.appendChild(img);
+      el.style.fontSize = '0';
+    };
+    img.onerror = tryNext;
+    img.src = path;
   };
-  img.onerror = () => { /* keep emoji */ };
-  img.src = src;
+  tryNext();
 }
 
 // === Falling leaves ===
