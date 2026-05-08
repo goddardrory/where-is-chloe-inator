@@ -21,6 +21,8 @@ let currentQuote = '';
 let lastStateKey = null;     // re-animalese only when this changes
 let bubbleReady = false;     // gated until Acedio + Doof overlay are done
 
+const VISITED_KEY = 'whereischloe.visited';
+
 async function init() {
   // Kick off Acedio's WAV preload immediately so it's ready by the time the
   // first Tom Nook line is due to type out.
@@ -28,9 +30,19 @@ async function init() {
 
   // If they detonated the site on a previous visit, Resetti has a word for
   // them before anything else loads.
+  let gestureRecorded = false;
   if (isResettiOwed()) {
     await showResettiScold();
+    gestureRecorded = true; // dismissing Resetti is itself a gesture
   }
+
+  // First-visit splash: a single click to unlock audio so the Doof overlay's
+  // jingle + bg-music can fire on this visit. Subsequent visits skip it.
+  const visited = (() => { try { return localStorage.getItem(VISITED_KEY) === '1'; } catch { return false; } })();
+  if (!visited && !gestureRecorded) {
+    await showSplash();
+  }
+  try { localStorage.setItem(VISITED_KEY, '1'); } catch {}
 
   renderFlightCards();
   initEasterEggs();
@@ -309,6 +321,27 @@ function initAudioControls() {
       if (newState) unmuteBg(); else muteBg();
     });
   }
+}
+
+// === First-visit splash ===
+//
+// Shows a small "Click anywhere to begin" screen. Resolves on the first user
+// gesture so audio is unlocked before the Doof overlay opens its jingle.
+function showSplash() {
+  return new Promise((resolve) => {
+    const splash = document.getElementById('splash-overlay');
+    if (!splash) { resolve(); return; }
+    splash.classList.add('is-open');
+
+    const onGesture = () => {
+      splash.removeEventListener('click', onGesture);
+      document.removeEventListener('keydown', onGesture);
+      splash.classList.remove('is-open');
+      resolve();
+    };
+    splash.addEventListener('click', onGesture);
+    document.addEventListener('keydown', onGesture);
+  });
 }
 
 // === Tiny helper ===
