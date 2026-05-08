@@ -10,7 +10,7 @@ import { initEasterEggs, spawnConfetti, whenInitialDoofClosed, spawnFlyBy } from
 import { initMessages } from './messages.js';
 import { initTrivia } from './trivia.js';
 import { showToast } from './toast.js';
-import { playPerry, playPerryTheme } from './audio.js';
+import { playPerry, playPerryTheme, playTwss } from './audio.js';
 
 const TICK_MS = 1000; // 1s tick keeps countdown smooth; cheap.
 const NARRATOR_SWITCH_MS = 9000; // alternate bubble between state & quote
@@ -207,6 +207,13 @@ function startAirlineAnnouncements() {
         `Yes yes, do enjoy the in-flight catalogue. Page 47 has the loan schedule, hooo.`,
       ];
       showToast(`🦝 ${lines[Math.floor(Math.random() * lines.length)]}`, '', 6000);
+      // 18% chance Michael cannot help himself after Nook's loan-laden update
+      if (Math.random() < 0.18) {
+        setTimeout(() => {
+          playTwss();
+          showToast('👔 Michael: "That\'s what she said!"', '', 3500);
+        }, 1300);
+      }
     }
     setTimeout(fire, (12 + Math.random() * 8) * 60_000);
   };

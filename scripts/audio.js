@@ -16,6 +16,7 @@ const SOURCES = {
   doofJingle:  'assets/audio/doof-jingle.mp3',
   lizardKing:  'assets/audio/lizard-king.mp3',
   dwightSlut:  'assets/audio/dwight-slut.mp3',
+  twss:        'assets/audio/twss.mp3',
 };
 
 const cache = {};
@@ -153,6 +154,13 @@ export function playDwightSlut() {
   const audio = load('dwightSlut');
   if (!audio) { fallbackBeep(440, 0.3); return; }
   tryPlay(audio.cloneNode(), () => fallbackBeep(440, 0.3));
+}
+
+// === That's what she said: typing trigger + Nook-announcement follow-up ===
+export function playTwss() {
+  const audio = load('twss');
+  if (!audio) { fallbackBeep(380, 0.4); return; }
+  tryPlay(audio.cloneNode(), () => fallbackBeep(380, 0.4));
 }
 
 // === Doof jingle: plays when the Doof overlay opens ===

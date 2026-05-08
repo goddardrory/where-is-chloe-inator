@@ -1,4 +1,4 @@
-import { playPerry, playPerryTheme, playQuack, playQuackVarying, playBomboclaat, playExplosion, playCreeperHiss, playDoofJingle, playLizardKing, playDwightSlut } from './audio.js';
+import { playPerry, playPerryTheme, playQuack, playQuackVarying, playBomboclaat, playExplosion, playCreeperHiss, playDoofJingle, playLizardKing, playDwightSlut, playTwss } from './audio.js';
 import { showToast } from './toast.js';
 import { silence as silenceBgMusic } from './bg-music.js';
 import { recordBomb } from './resetti-scold.js';
@@ -25,6 +25,7 @@ export function initEasterEggs() {
   initDoofTyping();
   initTriStateTyping();
   initDwightTyping();
+  initTwssTyping();
   initBombDetonation();
   initRogueDuck();
   initLeaves();
@@ -153,6 +154,23 @@ function showDoof(forceId) {
     overlay.addEventListener('click', onClick);
     document.addEventListener('keydown', onKey);
     const timer = setTimeout(close, DOOF_DISMISS_MS);
+  });
+}
+
+// === Type "twss" anywhere → Michael's signature interjection ===
+function initTwssTyping() {
+  const target = 'twss';
+  let buffer = '';
+  document.addEventListener('keydown', (e) => {
+    if (e.key.length !== 1) return;
+    buffer = (buffer + e.key.toLowerCase()).slice(-target.length);
+    if (buffer === target) {
+      buffer = '';
+      playTwss();
+      showToast('👔 Michael: "That\'s what she said!"', '', 3000);
+      addMiles(25, 'twss summoned');
+      awardAchievement('twss-typed', 'World\'s Best Boss approves.', 150);
+    }
   });
 }
 
