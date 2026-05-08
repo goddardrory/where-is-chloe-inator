@@ -446,8 +446,8 @@ function lizardKingSequence(goose) {
     if (!cinematicActive) return;
     goose.style.transition = 'none';
     goose.style.transformOrigin = '50% 35%';
-    const faceTranslateX = -elemW * 0.5; // shift LEFT half an element width
-    const faceTranslateY = -elemH * 1.4; // shift UP 140% of element height
+    const faceTranslateX = -elemW * 1.6; // shift LEFT 160% of element width
+    const faceTranslateY = -elemH * 2.6; // shift UP  260% of element height
     goose.style.transform =
       `translate(${faceTranslateX}px, ${faceTranslateY}px) scaleX(1) scale(18)`;
   }, zoomMs);
