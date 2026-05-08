@@ -3,7 +3,7 @@ import { showToast } from './toast.js';
 import { silence as silenceBgMusic, mute as muteBgMusic, unmute as unmuteBgMusic } from './bg-music.js';
 import { cancelAnimalese } from './animalese.js';
 import { recordBomb } from './resetti-scold.js';
-import { addMiles, awardAchievement } from './nook-miles.js';
+import { addMiles, awardAchievement, wipeAllMiles } from './nook-miles.js';
 
 const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
 
@@ -235,10 +235,10 @@ function detonate() {
   // Increment the bomb counter now so even a fast tab-close doesn't escape
   // Resetti, and the escalation level reflects the latest detonation.
   recordBomb();
-  // Detonation has consequences — Tom Nook's loan office takes a 1,000 mile
-  // hit out of your account. Toast fires before the page goes black.
-  addMiles(-1000, 'detonation');
-  showToast('💸 −1,000 NOOK MILES', 'bankruptcy', 1800);
+  // Detonation has consequences — the family Nook Miles total is wiped to
+  // zero. Inventory is preserved (items already bought, hooo).
+  wipeAllMiles('detonation');
+  showToast('💸 NOOK MILES WIPED — Tom Nook is FURIOUS, hooo!', 'bankruptcy', 2200);
 
   // Sequence: creeper hiss (~2.9s) → bomboclaat lands at the apex →
   // explosion sound + visual blast.

@@ -60,6 +60,18 @@ export function addMiles(delta, reason = '') {
   return localNext;
 }
 
+// Wipe the shared family miles total to zero. Used by detonation as a
+// dramatic punishment — server total reset atomically.
+export function wipeAllMiles(reason = 'wipe') {
+  setLocalMiles(0);
+  emitMilesChange(0, reason, 0);
+  fetch(SYNC_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ wipe: true }),
+  }).catch(() => {});
+}
+
 // Pull the shared total from the server and mirror it locally. Called on
 // init and every 60s in main.js so family members converge on the same
 // running count even if multiple devices add at once.

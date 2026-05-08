@@ -42,6 +42,13 @@ exports.handler = async (event) => {
     try { body = JSON.parse(event.body || '{}'); }
     catch { return json(400, { error: 'Invalid JSON' }); }
 
+    // Wipe action — sets the family total to zero atomically. Used by
+    // detonation as a more dramatic punishment than a fixed -1000.
+    if (body.wipe === true) {
+      await store.set(KEY, '0');
+      return json(200, { total: 0, wiped: true });
+    }
+
     const delta = toInt(body.delta, NaN);
     if (!Number.isFinite(delta)) return json(400, { error: 'Invalid delta' });
     if (Math.abs(delta) > MAX_DELTA) {

@@ -213,6 +213,29 @@
     </form>
   </div>
 
+  <!-- SHOP STICKER ROW (owned items) -->
+  <div class="shop-stickers" id="shop-stickers" aria-label="Family collection"></div>
+
+  <!-- SHOP BUTTON (floating) -->
+  <button class="shop-button" id="shop-button" type="button" aria-label="Open Nook's Cranny" title="Nook's Cranny">
+    <span class="shop-button-emoji">🏪</span>
+    <span class="shop-button-label">Shop</span>
+  </button>
+
+  <!-- SHOP MODAL -->
+  <div class="shop-overlay" id="shop-overlay" role="dialog" aria-label="Nook's Cranny">
+    <div class="shop-content">
+      <button class="shop-close" id="shop-close" type="button" aria-label="Close">×</button>
+      <div class="shop-header">
+        <div class="shop-eyebrow">NOOK'S CRANNY</div>
+        <h2 class="shop-title">Hooo! Welcome, traveler!</h2>
+        <div class="shop-balance" id="shop-balance">★ 0 miles</div>
+      </div>
+      <div class="shop-items" id="shop-items"></div>
+      <p class="shop-note">All purchases pool to the family — every device sees the same collection, hm-hmm.</p>
+    </div>
+  </div>
+
   <!-- TOAST CONTAINER -->
   <div class="toast-container" id="toast-container" aria-live="polite" aria-atomic="true"></div>
 

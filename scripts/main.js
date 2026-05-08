@@ -5,6 +5,7 @@ import { typeAnimalese, cancelAnimalese, preloadAcedio, whenAcedioReady } from '
 import { start as startBgMusic, crossFadeTo as bgCrossFade, mute as muteBg, unmute as unmuteBg } from './bg-music.js';
 import { isOwed as isResettiOwed, showScold as showResettiScold } from './resetti-scold.js';
 import { getBonusMiles, addMiles, awardAchievement, syncBonusMiles } from './nook-miles.js';
+import { initShop } from './shop.js';
 import { formatCountdown } from './countdown.js';
 import { initEasterEggs, spawnConfetti, whenInitialDoofClosed, spawnFlyBy } from './easter-eggs.js';
 import { initMessages } from './messages.js';
@@ -141,6 +142,9 @@ async function init() {
   // members show up.
   syncBonusMiles();
   setInterval(syncBonusMiles, 60_000);
+
+  // Nook's Cranny shop — wires the floating button + modal + sticker row
+  initShop();
 
   // Wait for the Doof overlay to dismiss AND for Acedio to be loaded before
   // we start typing Tom Nook quotes — otherwise the first quote uses the

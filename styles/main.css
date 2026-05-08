@@ -897,6 +897,214 @@ input, textarea, button {
   letter-spacing: 1px;
 }
 
+/* === NOOK'S CRANNY SHOP === */
+
+/* Floating shop button — bottom-left so it doesn't fight the audio controls */
+.shop-button {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-deep) 100%);
+  color: var(--nook-deep);
+  font-weight: 900;
+  font-size: 14px;
+  padding: 10px 16px 10px 12px;
+  border-radius: var(--radius-pill);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18), 0 2px 0 var(--gold-deep);
+  border: 3px solid #fff;
+  z-index: 50;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.shop-button:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(0,0,0,0.22), 0 3px 0 var(--gold-deep); }
+.shop-button:active { transform: translateY(1px); box-shadow: 0 2px 0 var(--gold-deep); }
+.shop-button-emoji { font-size: 18px; line-height: 1; }
+.shop-button-label { letter-spacing: 0.5px; }
+
+/* Sticker row — small pill above the trivia footer showing owned items */
+.shop-stickers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 4px 12px;
+  min-height: 0;
+}
+.shop-stickers:empty { display: none; }
+.shop-sticker {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--cream);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  cursor: help;
+}
+
+/* Shop modal */
+.shop-overlay {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(245, 197, 24, 0.25), transparent 55%),
+    rgba(20, 14, 6, 0.88);
+  z-index: 350;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  display: none;
+  overflow-y: auto;
+}
+.shop-overlay.is-open { display: flex; }
+
+.shop-content {
+  background: linear-gradient(180deg, var(--cream) 0%, var(--cream-warm) 100%);
+  border: 4px solid #fff;
+  border-radius: var(--radius-lg);
+  padding: 22px 22px 20px;
+  text-align: center;
+  max-width: 720px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+  position: relative;
+  animation: splash-pop 0.4s cubic-bezier(.34,1.56,.64,1) both;
+}
+
+.shop-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.08);
+  font-size: 24px;
+  color: var(--nook-deep);
+  font-weight: 900;
+  line-height: 1;
+}
+.shop-close:hover { background: rgba(0, 0, 0, 0.15); }
+
+.shop-header { margin-bottom: 16px; }
+.shop-eyebrow {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  color: var(--nook);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.shop-title {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--nook-deep);
+  margin: 4px 0 8px;
+  letter-spacing: -0.3px;
+}
+.shop-balance {
+  display: inline-block;
+  background: linear-gradient(135deg, var(--gold), var(--gold-deep));
+  color: var(--nook-deep);
+  padding: 4px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 0 rgba(212, 168, 20, 0.4);
+}
+
+.shop-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  margin: 8px 0 12px;
+}
+
+.shop-item {
+  background: #fff;
+  border: 2px solid var(--sand);
+  border-radius: var(--radius-md);
+  padding: 12px 10px 10px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.04);
+  position: relative;
+}
+.shop-item-emoji { font-size: 36px; line-height: 1; margin-bottom: 4px; }
+.shop-item-name {
+  font-weight: 900;
+  font-size: 13px;
+  color: var(--nook-deep);
+  line-height: 1.2;
+}
+.shop-item-blurb {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  line-height: 1.3;
+  margin: 2px 0 6px;
+  flex: 1;
+}
+.shop-item-owned {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: var(--leaf);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 900;
+  padding: 2px 6px;
+  border-radius: var(--radius-pill);
+  letter-spacing: 0.5px;
+}
+.shop-item-price {
+  font-weight: 900;
+  font-size: 13px;
+  color: var(--gold-deep);
+  letter-spacing: 0.5px;
+}
+.shop-item-buy {
+  width: 100%;
+  background: linear-gradient(135deg, var(--leaf) 0%, var(--leaf-dark) 100%);
+  color: #fff;
+  font-weight: 900;
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: var(--radius-pill);
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+  box-shadow: 0 2px 0 var(--leaf-dark);
+  transition: transform 0.1s;
+}
+.shop-item-buy:hover:not(:disabled) { transform: translateY(-1px); }
+.shop-item-buy:active:not(:disabled) { transform: translateY(1px); box-shadow: 0 0 0 var(--leaf-dark); }
+.shop-item-buy:disabled {
+  background: #d4cfb8;
+  color: #6b6155;
+  box-shadow: 0 2px 0 #aaa3a0;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.shop-note {
+  font-size: 11px;
+  color: var(--nook);
+  font-style: italic;
+  margin: 8px 0 0;
+}
+
 /* === LIZARD KING CINEMATIC BLACKOUT === */
 .lizard-king-blackout {
   position: fixed;
