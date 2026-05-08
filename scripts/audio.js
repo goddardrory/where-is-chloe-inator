@@ -31,26 +31,26 @@ function load(key) {
 
 export function playPerry() {
   const audio = load('perryyy');
-  if (audio) tryPlay(audio.cloneNode());
+  if (audio) tryPlay(audio.cloneNode(), () => fallbackBeep(880, 0.12));
   else fallbackBeep(880, 0.12);
 }
 
 export function playPerryTheme() {
   const audio = load('perryTheme');
-  if (audio) tryPlay(audio.cloneNode());
+  if (audio) tryPlay(audio.cloneNode(), fallbackMelody);
   else fallbackMelody();
 }
 
 export function playQuack() {
   const audio = load('quack');
-  if (audio) tryPlay(audio.cloneNode());
+  if (audio) tryPlay(audio.cloneNode(), () => fallbackBeep(220, 0.18));
   else fallbackBeep(220, 0.18);
 }
 
 export function playBomboclaat() {
   const audio = load('bomboclaat');
-  if (audio) tryPlay(audio.cloneNode());
-  else fallbackBeep(110, 0.5); // deep rumble fallback
+  if (audio) tryPlay(audio.cloneNode(), () => fallbackBeep(110, 0.5));
+  else fallbackBeep(110, 0.5);
 }
 
 // === Animalese: short pitched blip per character, à la AC dialogue ===
@@ -137,14 +137,17 @@ export function stopKK() {
   kkLoop = null;
 }
 
-function tryPlay(audio) {
+function tryPlay(audio, onFail) {
   duck();
-  const release = () => unduck();
+  let released = false;
+  const release = () => { if (!released) { released = true; unduck(); } };
   audio.addEventListener('ended', release, { once: true });
-  audio.addEventListener('error', release, { once: true });
+  audio.addEventListener('error', () => { release(); if (onFail) onFail(); }, { once: true });
   audio.addEventListener('pause', release, { once: true });
   const p = audio.play();
-  if (p && typeof p.catch === 'function') p.catch(() => { release(); });
+  if (p && typeof p.catch === 'function') {
+    p.catch(() => { release(); if (onFail) onFail(); });
+  }
 }
 
 // Manual duck for synthesised (Web Audio) sounds that don't fire DOM events.
@@ -163,6 +166,7 @@ function ac() {
 
 function fallbackBeep(freq, duration) {
   const c = ac(); if (!c) return;
+  if (c.state === 'suspended' && c.resume) c.resume().catch(() => {});
   const osc = c.createOscillator();
   const gain = c.createGain();
   osc.frequency.value = freq;

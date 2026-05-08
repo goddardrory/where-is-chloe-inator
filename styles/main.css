@@ -1209,6 +1209,19 @@ input, textarea, button {
 }
 .doof-close:hover { background: rgba(0, 0, 0, 0.5); }
 
+.doof-portrait {
+  display: none;        /* hidden until JS confirms it loaded successfully */
+  margin: -8px auto 4px;
+  max-width: 200px;
+  max-height: 200px;
+  width: auto;
+  height: auto;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.4));
+}
+.doof-portrait.is-loaded { display: block; }
+/* When the portrait is in, the emoji plays a smaller accent role */
+.doof-content:has(.doof-portrait.is-loaded) .doof-emoji { font-size: 32px; margin-top: 4px; }
+
 .doof-emoji { font-size: 64px; margin-bottom: 8px; }
 .doof-title {
   font-size: 22px;

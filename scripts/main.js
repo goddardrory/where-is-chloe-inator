@@ -1,11 +1,11 @@
 import { FLIGHTS } from '../data/flights.js';
 import { computeState, computeJourneyProgress, computeMilesEarned } from './flight-state.js';
 import { narrate, randomNookQuote } from './nook-narrator.js';
-import { typeAnimalese, cancelAnimalese } from './animalese.js';
+import { typeAnimalese, cancelAnimalese, preloadAcedio, whenAcedioReady } from './animalese.js';
 import { start as startBgMusic } from './bg-music.js';
 import { isOwed as isResettiOwed, showScold as showResettiScold } from './resetti-scold.js';
 import { formatCountdown } from './countdown.js';
-import { initEasterEggs, spawnConfetti } from './easter-eggs.js';
+import { initEasterEggs, spawnConfetti, whenInitialDoofClosed } from './easter-eggs.js';
 import { initMessages } from './messages.js';
 import { initTrivia } from './trivia.js';
 import { showToast } from './toast.js';
@@ -19,8 +19,13 @@ let lastFlightIdx = null;
 let narratorMode = 'state'; // 'state' or 'quote'
 let currentQuote = '';
 let lastStateKey = null;     // re-animalese only when this changes
+let bubbleReady = false;     // gated until Acedio + Doof overlay are done
 
 async function init() {
+  // Kick off Acedio's WAV preload immediately so it's ready by the time the
+  // first Tom Nook line is due to type out.
+  preloadAcedio();
+
   // If they detonated the site on a previous visit, Resetti has a word for
   // them before anything else loads.
   if (isResettiOwed()) {
@@ -39,6 +44,17 @@ async function init() {
 
   tick();
   setInterval(tick, TICK_MS);
+
+  // Wait for the Doof overlay to dismiss AND for Acedio to be loaded before
+  // we start typing Tom Nook quotes — otherwise the first quote uses the
+  // synth fallback and Tom Nook talks behind/over the Doof intro.
+  await Promise.all([
+    whenInitialDoofClosed(),
+    whenAcedioReady(),
+  ]);
+
+  bubbleReady = true;
+  lastStateKey = null; // force the very next tick to re-animalese cleanly
 
   // Alternate the Tom Nook bubble between live status and famous quotes.
   // Both modes use Animalese; the next tick handles state mode by re-picking.
@@ -67,9 +83,9 @@ function tick() {
   setText('status-line', hero);
 
   // State-mode bubble: type a fresh random line via Animalese only when we
-  // first enter state mode or the phase changes. Within the same phase we
-  // leave the bubble alone (countdown updates live in the hero line instead).
-  if (narratorMode === 'state') {
+  // first enter state mode or the phase changes. Gated on bubbleReady so we
+  // don't fire the first quote until the Doof overlay closes + Acedio loads.
+  if (narratorMode === 'state' && bubbleReady) {
     const key = `${state.phase}:${state.index ?? ''}`;
     if (key !== lastStateKey) {
       lastStateKey = key;

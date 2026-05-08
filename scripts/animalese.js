@@ -21,25 +21,41 @@ const SYNTH_SPEED_MS = 36;
 let acedio = null;
 let acedioReady = false;
 let acedioFailed = false;
+let acedioReadyPromise = null;
 let activeTimer = null;
 let activeAudio = null;
 let activeTarget = null;
 
-// Lazily initialise the Acedio engine. Cheap to call repeatedly.
-function ensureAcedio() {
-  if (acedioReady || acedioFailed) return;
+// Begin loading Acedio's letter library NOW. Idempotent — repeat calls return
+// the same promise. Resolves true on success, false if the lib isn't present.
+export function preloadAcedio() {
+  if (acedioReadyPromise) return acedioReadyPromise;
   if (typeof window === 'undefined' || typeof window.Animalese !== 'function') {
     acedioFailed = true;
-    return;
+    acedioReadyPromise = Promise.resolve(false);
+    return acedioReadyPromise;
   }
-  try {
-    acedio = new window.Animalese('scripts/vendor/animalese/animalese.wav', () => {
-      acedioReady = true;
-    });
-  } catch {
-    acedioFailed = true;
-  }
+  acedioReadyPromise = new Promise((resolve) => {
+    try {
+      acedio = new window.Animalese('scripts/vendor/animalese/animalese.wav', () => {
+        acedioReady = true;
+        resolve(true);
+      });
+    } catch {
+      acedioFailed = true;
+      resolve(false);
+    }
+  });
+  return acedioReadyPromise;
 }
+
+// Resolves when Acedio is ready (or has failed — either way callers can proceed).
+export function whenAcedioReady() {
+  return preloadAcedio();
+}
+
+// Backwards-compat shim used in typeAnimalese.
+function ensureAcedio() { preloadAcedio(); }
 
 export function cancelAnimalese() {
   if (activeTimer) {

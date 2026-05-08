@@ -16,6 +16,8 @@ const DOOF_SCHEMES = [
 
 const DOOF_DISMISS_MS = 8000;
 
+let initialDoofPromise = null;
+
 export function initEasterEggs() {
   initLogoClick();
   initKonami();
@@ -27,7 +29,14 @@ export function initEasterEggs() {
 
   // Show the Doof overlay on page load so visitors see it without having to
   // discover the typing triggers. The same dismissal logic applies.
-  setTimeout(() => showDoof(), 500);
+  initialDoofPromise = new Promise((resolve) => {
+    setTimeout(() => showDoof().then(resolve), 500);
+  });
+}
+
+// Resolves when the on-load Doof overlay is dismissed (or the timeout fires).
+export function whenInitialDoofClosed() {
+  return initialDoofPromise || Promise.resolve();
 }
 
 // === Logo click: "Perryyy!" ===
@@ -44,8 +53,8 @@ function initLogoClick() {
     if (timer) clearTimeout(timer);
     timer = setTimeout(() => { clickCount = 0; }, 2200);
     if (clickCount === 2) {
-      // double click: spawn a fly-by perry
-      spawnFlyBy('🕵️');
+      // double click: spawn a fly-by perry (uses assets/img/perry.png if present)
+      spawnFlyBy('🕵️', 'assets/img/perry.png');
       clickCount = 0;
     }
   };
@@ -91,38 +100,53 @@ function initDoofTyping() {
 }
 
 // Show the Doof overlay. Optionally force a specific scheme by id.
+// Returns a promise that resolves once the overlay is dismissed.
 function showDoof(forceId) {
-  const overlay = document.getElementById('doof-overlay');
-  if (!overlay) return;
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('doof-overlay');
+    if (!overlay) { resolve(); return; }
 
-  const scheme = forceId
-    ? (DOOF_SCHEMES.find((s) => s.id === forceId) || DOOF_SCHEMES[0])
-    : DOOF_SCHEMES[Math.floor(Math.random() * DOOF_SCHEMES.length)];
+    const scheme = forceId
+      ? (DOOF_SCHEMES.find((s) => s.id === forceId) || DOOF_SCHEMES[0])
+      : DOOF_SCHEMES[Math.floor(Math.random() * DOOF_SCHEMES.length)];
 
-  const emojiEl = document.getElementById('doof-emoji');
-  const titleEl = document.getElementById('doof-title');
-  const subEl   = document.getElementById('doof-sub');
-  if (emojiEl) emojiEl.textContent = scheme.emoji;
-  if (titleEl) titleEl.textContent = scheme.title;
-  if (subEl)   subEl.textContent   = scheme.sub;
+    const emojiEl = document.getElementById('doof-emoji');
+    const titleEl = document.getElementById('doof-title');
+    const subEl   = document.getElementById('doof-sub');
+    const portrait = document.getElementById('doof-portrait');
+    if (emojiEl) emojiEl.textContent = scheme.emoji;
+    if (titleEl) titleEl.textContent = scheme.title;
+    if (subEl)   subEl.textContent   = scheme.sub;
+    // Reveal the portrait if it loaded successfully (file present);
+    // otherwise the emoji stays as the primary visual.
+    if (portrait) {
+      if (portrait.complete && portrait.naturalWidth > 0) {
+        portrait.classList.add('is-loaded');
+      } else {
+        portrait.addEventListener('load', () => portrait.classList.add('is-loaded'), { once: true });
+        portrait.addEventListener('error', () => portrait.remove(), { once: true });
+      }
+    }
 
-  overlay.classList.add('is-open');
+    overlay.classList.add('is-open');
 
-  let closed = false;
-  const close = () => {
-    if (closed) return;
-    closed = true;
-    overlay.classList.remove('is-open');
-    overlay.removeEventListener('click', onClick);
-    document.removeEventListener('keydown', onKey);
-    clearTimeout(timer);
-  };
-  const onClick = () => close();
-  const onKey = () => close();
+    let closed = false;
+    const close = () => {
+      if (closed) return;
+      closed = true;
+      overlay.classList.remove('is-open');
+      overlay.removeEventListener('click', onClick);
+      document.removeEventListener('keydown', onKey);
+      clearTimeout(timer);
+      resolve();
+    };
+    const onClick = () => close();
+    const onKey = () => close();
 
-  overlay.addEventListener('click', onClick);
-  document.addEventListener('keydown', onKey);
-  const timer = setTimeout(close, DOOF_DISMISS_MS);
+    overlay.addEventListener('click', onClick);
+    document.addEventListener('keydown', onKey);
+    const timer = setTimeout(close, DOOF_DISMISS_MS);
+  });
 }
 
 // === Type "tristate" anywhere → force the tri-state-area Doof scheme ===
@@ -257,18 +281,31 @@ export function spawnConfetti(count = 40) {
   }
 }
 
-function spawnFlyBy(emoji) {
+function spawnFlyBy(emoji, imgPath) {
   const el = document.createElement('div');
-  el.textContent = emoji;
   Object.assign(el.style, {
     position: 'fixed',
     left: '-80px',
     top: `${20 + Math.random() * 40}vh`,
     fontSize: '40px',
-    zIndex: 100,
+    zIndex: '100',
     pointerEvents: 'none',
     transition: 'left 2.4s linear, transform 0.4s ease-in-out',
   });
+
+  // Prefer an image if a path is supplied AND it loads; otherwise emoji.
+  if (imgPath) {
+    const img = document.createElement('img');
+    img.src = imgPath;
+    img.alt = '';
+    img.style.height = '52px';
+    img.style.width = 'auto';
+    img.addEventListener('error', () => { el.replaceChildren(); el.textContent = emoji; }, { once: true });
+    el.appendChild(img);
+  } else {
+    el.textContent = emoji;
+  }
+
   document.body.appendChild(el);
   requestAnimationFrame(() => { el.style.left = '110vw'; });
   setTimeout(() => el.remove(), 2600);

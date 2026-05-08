@@ -1,10 +1,15 @@
 // Rotating trivia ticker. Each entry has an icon (the speaker) and text.
 // Icons can be an emoji string, or 'img:<path>' to render an actual image.
 
-const NOOK_IMG    = 'img:assets/img/tom-nook.png';
+// Each icon spec is either a plain emoji string or { img, emoji } where the
+// image is preferred and the emoji is the fallback if the file 404s.
+const NOOK_IMG    = { img: 'assets/img/tom-nook.png',     emoji: '🦝' };
+const I_PERRY     = { img: 'assets/img/perry.png',         emoji: '🕵️' };
+const I_DOOF      = { img: 'assets/img/doof.png',          emoji: '🦹' };
+const I_RESETTI_IMG = { img: 'assets/img/resetti-angry.png', emoji: '😤' };
 const I_TWINS     = '🦝';   // Timmy & Tommy
 const I_SABLE     = '🦔';   // hedgehog stand-in for Sable/Mabel/Label
-const I_RESETTI   = '😤';   // angry mole stand-in (no mole emoji)
+const I_RESETTI   = I_RESETTI_IMG; // angry mole — uses the supplied portrait
 const I_SCHRUTE   = '🚜';   // beet farm tractor
 const I_DWIGHT    = '🌽';   // identity-theft enthusiast
 const I_MICHAEL   = '👔';   // World's Best Boss
@@ -12,8 +17,6 @@ const I_PAM       = '🎨';
 const I_STANLEY   = '🥨';   // Pretzel Day
 const I_KEVIN     = '🍲';   // chili
 const I_ANDY      = '🎺';
-const I_PERRY     = '🕵️';   // Agent P
-const I_DOOF      = '🦹';   // supervillain
 const I_KK        = '🎸';
 const I_ISABELLE  = '🐶';
 const I_BLATHERS  = '🦉';
@@ -167,6 +170,23 @@ function fade(iconEl, textEl, item) {
 }
 
 function buildIcon(spec) {
+  // Spec can be:
+  //   - plain emoji string ('🦆')
+  //   - 'img:path' string (legacy)
+  //   - { img, emoji } object — image preferred, emoji is fallback if 404s
+  if (typeof spec === 'object' && spec && spec.img) {
+    const img = document.createElement('img');
+    img.src = spec.img;
+    img.alt = '';
+    img.className = 'trivia-icon-img';
+    img.width = 32;
+    img.height = 32;
+    img.addEventListener('error', () => {
+      const fallback = makeEmojiSpan(spec.emoji || '✨');
+      img.replaceWith(fallback);
+    }, { once: true });
+    return img;
+  }
   if (typeof spec === 'string' && spec.startsWith('img:')) {
     const img = document.createElement('img');
     img.src = spec.slice(4);
@@ -176,8 +196,12 @@ function buildIcon(spec) {
     img.height = 32;
     return img;
   }
+  return makeEmojiSpan(spec);
+}
+
+function makeEmojiSpan(emoji) {
   const span = document.createElement('span');
   span.className = 'trivia-icon-emoji';
-  span.textContent = spec;
+  span.textContent = emoji;
   return span;
 }
