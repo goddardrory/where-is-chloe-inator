@@ -7,11 +7,11 @@ const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRi
 
 // Doof rotates between his evil schemes on each appearance.
 const DOOF_SCHEMES = [
-  { id: 'chloe',     emoji: '🧪', title: 'BEHOLD! THE WHERE-IS-CHLOE-INATOR!',          sub: '— Dr. Heinz Doofenshmirtz' },
-  { id: 'tristate',  emoji: '🌆', title: 'AND I SHALL TAKE OVER THE ENTIRE TRI-STATE AREA!', sub: '— Dr. Heinz Doofenshmirtz, Evil Inc.' },
-  { id: 'delay',     emoji: '⚡', title: 'BEHOLD! THE FLIGHT-DELAY-INATOR!',              sub: '(curse you, Perry the Platypus!)' },
-  { id: 'drussel',   emoji: '🛬', title: 'I SHALL REROUTE THIS PLANE TO DRUSSELSTEIN!',  sub: '— Dr. Heinz Doofenshmirtz' },
-  { id: 'pretzel',   emoji: '🥨', title: 'BEHOLD! THE INFINITE-PRETZEL-INATOR!',         sub: '(an unrelated scheme, but still evil)' },
+  { id: 'chloe',    title: 'BEHOLD! THE WHERE-IS-CHLOE-INATOR!',              sub: '— Dr. Heinz Doofenshmirtz' },
+  { id: 'tristate', title: 'AND I SHALL TAKE OVER THE ENTIRE TRI-STATE AREA!', sub: '— Dr. Heinz Doofenshmirtz, Evil Inc.' },
+  { id: 'delay',    title: 'BEHOLD! THE FLIGHT-DELAY-INATOR!',                  sub: '(curse you, Perry the Platypus!)' },
+  { id: 'drussel',  title: 'I SHALL REROUTE THIS PLANE TO DRUSSELSTEIN!',      sub: '— Dr. Heinz Doofenshmirtz' },
+  { id: 'pretzel',  title: 'BEHOLD! THE INFINITE-PRETZEL-INATOR!',             sub: '(an unrelated scheme, but still evil)' },
 ];
 
 const DOOF_DISMISS_MS = 8000;
@@ -110,11 +110,9 @@ function showDoof(forceId) {
       ? (DOOF_SCHEMES.find((s) => s.id === forceId) || DOOF_SCHEMES[0])
       : DOOF_SCHEMES[Math.floor(Math.random() * DOOF_SCHEMES.length)];
 
-    const emojiEl = document.getElementById('doof-emoji');
     const titleEl = document.getElementById('doof-title');
     const subEl   = document.getElementById('doof-sub');
     const portrait = document.getElementById('doof-portrait');
-    if (emojiEl) emojiEl.textContent = scheme.emoji;
     if (titleEl) titleEl.textContent = scheme.title;
     if (subEl)   subEl.textContent   = scheme.sub;
     // Reveal the portrait if it loaded successfully (file present);
