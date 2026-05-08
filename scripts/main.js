@@ -296,7 +296,7 @@ function initAudioControls() {
   if (perryBtn) {
     perryBtn.addEventListener('click', () => {
       playPerry();
-      spawnFlyBy('🕵️', 'assets/img/perry.png', { heightPx: 280 });
+      spawnFlyBy('🕵️', 'assets/img/perry-fly.png', { heightPx: 280 });
     });
   }
   if (kkToggle) {

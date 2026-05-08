@@ -53,8 +53,8 @@ function initLogoClick() {
     if (timer) clearTimeout(timer);
     timer = setTimeout(() => { clickCount = 0; }, 2200);
     if (clickCount === 2) {
-      // double click: spawn a fly-by perry (uses assets/img/perry.png if present)
-      spawnFlyBy('🕵️', 'assets/img/perry.png');
+      // double click: spawn a fly-by perry (uses assets/img/perry-fly.png if present)
+      spawnFlyBy('🕵️', 'assets/img/perry-fly.png');
       clickCount = 0;
     }
   };
