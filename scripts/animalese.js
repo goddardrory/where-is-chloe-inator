@@ -84,6 +84,22 @@ export function typeAnimalese(el, text, opts = {}) {
 }
 
 // === Acedio path: one big audio file, typewriter timed to its cadence ===
+//
+// iOS / Safari / Brave-iOS gotcha: each NEW Audio() instance requires its
+// own user-gesture unlock. Cloning or recreating per phrase means only the
+// first one after a tap plays. Solution: use a single persistent audio
+// element that gets unlocked once on the first user gesture and then has
+// its `src` swapped per phrase. The same element keeps its unlock state.
+let persistentAcedioAudio = null;
+function getPersistentAcedioAudio() {
+  if (persistentAcedioAudio) return persistentAcedioAudio;
+  const a = new Audio();
+  a.volume = 0.4;
+  a.preload = 'auto';
+  persistentAcedioAudio = a;
+  return a;
+}
+
 function typeWithAcedio(el, text, opts) {
   const pitch = opts.pitch ?? NOOK_PITCH;
 
@@ -96,13 +112,15 @@ function typeWithAcedio(el, text, opts) {
   }
 
   if (wave && wave.dataURI) {
-    const audio = new Audio(wave.dataURI);
-    audio.volume = 0.4; // -20% from 0.5 — Nook a touch quieter
+    const audio = getPersistentAcedioAudio();
+    // Halt any in-flight playback before swapping src so iOS doesn't choke.
+    try { audio.pause(); audio.currentTime = 0; } catch {}
+    audio.src = wave.dataURI;
     duck();
     let released = false;
     const release = () => { if (!released) { released = true; unduck(); } };
-    audio.addEventListener('ended', release, { once: true });
-    audio.addEventListener('error', release, { once: true });
+    audio.onended = release;
+    audio.onerror = release;
     audio.play().catch(release);
     activeAudio = audio;
   }
