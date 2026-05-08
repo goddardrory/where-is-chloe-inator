@@ -293,13 +293,14 @@ function playHeadTurn(goose) {
   setTimeout(() => { img.src = stillSrc; }, 1500);
 }
 
+// Source sprite faces LEFT, so walking right requires a horizontal flip.
 function currentDirTransform(el) {
-  return el.dataset.facing === 'left' ? 'scaleX(-1)' : 'scaleX(1)';
+  return el.dataset.facing === 'right' ? 'scaleX(-1)' : 'scaleX(1)';
 }
 
 function setDir(el, isRight) {
   el.dataset.facing = isRight ? 'right' : 'left';
-  el.style.transform = isRight ? 'scaleX(1)' : 'scaleX(-1)';
+  el.style.transform = isRight ? 'scaleX(-1)' : 'scaleX(1)';
 }
 
 async function beginGooseVisit(goose) {
