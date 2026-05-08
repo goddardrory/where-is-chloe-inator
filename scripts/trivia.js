@@ -25,6 +25,10 @@ const PERRY = [
   'Doofenshmirtz Evil Incorporated has not yet attacked the aircraft.',
   'Confidential: Agent P approved the carry-on. He says it\'s fine.',
   '1200: Sweet, sweet platypus power.',
+  'Doofenshmirtz Evil Inc.: Tri-State Area takeover progress: 0%. (Curse you, Perry the Platypus.)',
+  'Doof: "Behold! The Where-is-Chloe-inator! ...wait, that\'s just a flight tracker."',
+  'Doof: "Ah Perry the Platypus. How unexpected. By which I mean expected."',
+  'Doof: "I shall take over the entire TRI-STATE AREA — once Chloe lands, of course."',
 ];
 
 // Tom Nook + Timmy & Tommy + the broader Nook universe.

@@ -1,12 +1,22 @@
-import { playPerry, playPerryTheme, playQuack } from './audio.js';
+import { playPerry, playPerryTheme, playQuack, playBomboclaat } from './audio.js';
 import { showToast } from './toast.js';
 
 const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+
+// Doof rotates between his evil schemes on each appearance.
+const DOOF_SCHEMES = [
+  { emoji: '🧪', title: 'BEHOLD! THE WHERE-IS-CHLOE-INATOR!',          sub: '— Dr. Heinz Doofenshmirtz' },
+  { emoji: '🌆', title: 'AND I SHALL TAKE OVER THE ENTIRE TRI-STATE AREA!', sub: '— Dr. Heinz Doofenshmirtz, Evil Inc.' },
+  { emoji: '⚡', title: 'BEHOLD! THE FLIGHT-DELAY-INATOR!',              sub: '(curse you, Perry the Platypus!)' },
+  { emoji: '🛬', title: 'I SHALL REROUTE THIS PLANE TO DRUSSELSTEIN!',  sub: '— Dr. Heinz Doofenshmirtz' },
+  { emoji: '🥨', title: 'BEHOLD! THE INFINITE-PRETZEL-INATOR!',         sub: '(an unrelated scheme, but still evil)' },
+];
 
 export function initEasterEggs() {
   initLogoClick();
   initKonami();
   initDoofTyping();
+  initBomboclaatTyping();
   initRogueDuck();
   initLeaves();
 
@@ -78,6 +88,16 @@ function initDoofTyping() {
 function showDoof() {
   const overlay = document.getElementById('doof-overlay');
   if (!overlay) return;
+
+  // Pick a random scheme and apply it to the overlay
+  const scheme = DOOF_SCHEMES[Math.floor(Math.random() * DOOF_SCHEMES.length)];
+  const emojiEl = document.getElementById('doof-emoji');
+  const titleEl = document.getElementById('doof-title');
+  const subEl   = document.getElementById('doof-sub');
+  if (emojiEl) emojiEl.textContent = scheme.emoji;
+  if (titleEl) titleEl.textContent = scheme.title;
+  if (subEl)   subEl.textContent   = scheme.sub;
+
   overlay.classList.add('is-open');
 
   let closed = false;
@@ -97,13 +117,34 @@ function showDoof() {
   const timer = setTimeout(close, 4500);
 }
 
+// === Type "bomb" anywhere → Resetti yells BOMBOCLAAT ===
+function initBomboclaatTyping() {
+  const target = 'bomb';
+  let buffer = '';
+  document.addEventListener('keydown', (e) => {
+    if (e.key.length !== 1) return;
+    buffer = (buffer + e.key.toLowerCase()).slice(-target.length);
+    if (buffer === target) {
+      buffer = '';
+      playBomboclaat();
+      showToast('🦔 RESETTI: BOMBOCLAAT?!?!', 'bankruptcy', 3000);
+    }
+  });
+}
+
 // === Rogue duck waddle ===
 function initRogueDuck() {
   const duck = document.getElementById('rogue-duck');
   if (!duck) return;
 
   duck.addEventListener('click', () => {
-    playQuack();
+    // 1-in-4 chance the duck says BOMBOCLAAT instead of quacking.
+    if (Math.random() < 0.25) {
+      playBomboclaat();
+      showToast('🦆 …did that duck just—?', '', 2200);
+    } else {
+      playQuack();
+    }
   });
 
   // First waddle 30s after load, then every 3-4 minutes

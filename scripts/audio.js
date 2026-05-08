@@ -7,6 +7,7 @@ const SOURCES = {
   perryTheme: 'assets/audio/perry-theme.mp3',
   quack:      'assets/audio/quack.mp3',
   kkAirline:  'assets/audio/kk-airline.mp3',
+  bomboclaat: 'assets/audio/bomboclaat.mp3',
 };
 
 const cache = {};
@@ -40,6 +41,12 @@ export function playQuack() {
   const audio = load('quack');
   if (audio) tryPlay(audio.cloneNode());
   else fallbackBeep(220, 0.18);
+}
+
+export function playBomboclaat() {
+  const audio = load('bomboclaat');
+  if (audio) tryPlay(audio.cloneNode());
+  else fallbackBeep(110, 0.5); // deep rumble fallback
 }
 
 export function startKK() {

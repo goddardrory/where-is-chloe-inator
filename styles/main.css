@@ -189,17 +189,23 @@ input, textarea, button {
 }
 
 .nook-avatar {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   flex-shrink: 0;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--nook) 0%, #6d553a 100%);
+  background: var(--cream);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 26px;
   border: 3px solid #fff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 0 0 2px var(--gold), 0 2px 6px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+.nook-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .nook-bubble {
