@@ -13,7 +13,9 @@ import { showToast } from './toast.js';
 import { playPerry, playPerryTheme, playTwss } from './audio.js';
 
 const TICK_MS = 1000; // 1s tick keeps countdown smooth; cheap.
-const NARRATOR_SWITCH_MS = 9000; // alternate bubble between state & quote
+const TYPE_MS_PER_CHAR    = 75;   // matches Acedio cadence in animalese.js
+const TYPE_BUFFER_MS      = 350;  // small beat after the last char
+const POST_LINE_WAIT_MS   = 4000; // dwell on each line before rotating
 
 let lastPhase = null;
 let lastFlightIdx = null;
@@ -21,6 +23,42 @@ let narratorMode = 'state'; // 'state' or 'quote'
 let currentQuote = '';
 let lastStateKey = null;     // re-animalese only when this changes
 let bubbleReady = false;     // gated until Acedio + Doof overlay are done
+let narratorTimer = null;    // pending flip; cleared/reset by every new line
+
+// Schedule the NEXT narrator-mode flip based on how long the *current* line
+// will take to type out. Replaces the old fixed-interval rotator so long
+// quotes don't get cut off. Call this whenever a new line starts typing
+// in the bubble (state-mode tick, quote-mode flip, or Tom-Nook-avatar click).
+function scheduleNextNarratorFlip(textLength) {
+  if (narratorTimer) clearTimeout(narratorTimer);
+  const animMs = (textLength | 0) * TYPE_MS_PER_CHAR + TYPE_BUFFER_MS;
+  narratorTimer = setTimeout(flipNarratorMode, animMs + POST_LINE_WAIT_MS);
+}
+
+function flipNarratorMode() {
+  narratorMode = narratorMode === 'state' ? 'quote' : 'state';
+  cancelAnimalese();
+  if (narratorMode === 'quote') {
+    const useTwssBait = Math.random() < 0.25;
+    currentQuote = useTwssBait ? randomNookTwssBait() : randomNookQuote();
+    const bubble = document.getElementById('nook-bubble');
+    if (bubble) {
+      typeAnimalese(bubble, currentQuote);
+      if (useTwssBait) {
+        const animMs = currentQuote.length * TYPE_MS_PER_CHAR + TYPE_BUFFER_MS;
+        setTimeout(() => {
+          playTwss();
+          showToast('👔 Michael: "That\'s what she said!"', '', 3500);
+        }, animMs);
+      }
+    }
+    scheduleNextNarratorFlip(currentQuote.length);
+  } else {
+    // Tick will pick a fresh state line on its next pass and schedule the
+    // next flip itself based on that line's length.
+    lastStateKey = null;
+  }
+}
 
 const VISITED_KEY = 'whereischloe.visited';
 const NAME_KEY    = 'whereischloe.userName';
@@ -92,34 +130,10 @@ async function init() {
   bubbleReady = true;
   lastStateKey = null; // force the very next tick to re-animalese cleanly
 
-  // Alternate the Tom Nook bubble between live status and famous quotes.
-  // Both modes use Animalese; the next tick handles state mode by re-picking.
-  setInterval(() => {
-    narratorMode = narratorMode === 'state' ? 'quote' : 'state';
-    cancelAnimalese();
-    if (narratorMode === 'quote') {
-      // 25% of quotes pull from the TWSS-bait pool. When that fires, queue
-      // Michael's "That's what she said" right after Animalese finishes.
-      const useTwssBait = Math.random() < 0.25;
-      currentQuote = useTwssBait ? randomNookTwssBait() : randomNookQuote();
-      const bubble = document.getElementById('nook-bubble');
-      if (bubble) {
-        typeAnimalese(bubble, currentQuote);
-        if (useTwssBait) {
-          // Animalese types at ~75ms per char; tack on a small beat for
-          // Nook to land the line before Michael punches the punchline.
-          const animMs = currentQuote.length * 75 + 350;
-          setTimeout(() => {
-            playTwss();
-            showToast('👔 Michael: "That\'s what she said!"', '', 3500);
-          }, animMs);
-        }
-      }
-    } else {
-      // Force the next tick to re-pick & re-animalese a fresh state line.
-      lastStateKey = null;
-    }
-  }, NARRATOR_SWITCH_MS);
+  // Bubble rotation is no longer a fixed interval — each line gets its full
+  // typing duration plus POST_LINE_WAIT_MS of dwell time before flipping.
+  // The first state line will be picked by tick() now that bubbleReady=true,
+  // and tick will schedule the first flip based on that line's length.
 }
 
 // === Tick: re-render based on current state ===
@@ -142,6 +156,9 @@ function tick() {
       const line = nookOptions[Math.floor(Math.random() * nookOptions.length)];
       const bubble = document.getElementById('nook-bubble');
       if (bubble) typeAnimalese(bubble, line);
+      // Schedule the next narrator flip based on this line's typing time +
+      // dwell. Long lines get their full reading time before rotating.
+      scheduleNextNarratorFlip(line.length);
     }
   }
 
@@ -504,7 +521,13 @@ function initInteractiveMiles() {
       addMiles(2, 'pet Tom Nook');
       awardAchievement('pet-nook', 'Tom Nook says hi!', 30);
       const bubble = document.getElementById('nook-bubble');
-      if (bubble) typeAnimalese(bubble, randomNookQuote());
+      if (bubble) {
+        const quote = randomNookQuote();
+        typeAnimalese(bubble, quote);
+        // Reset the rotation timer so the click-quote gets its full reading
+        // time before the natural rotation flips it.
+        scheduleNextNarratorFlip(quote.length);
+      }
     });
   }
 
