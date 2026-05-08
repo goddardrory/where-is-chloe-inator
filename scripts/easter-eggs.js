@@ -289,8 +289,8 @@ async function beginGooseVisit(goose) {
   goose.style.top  = `${startY}px`;
   setDir(goose, enterRight);
 
-  // Visit 3–5 random points
-  const stops = 3 + Math.floor(Math.random() * 3);
+  // Visit 4–6 random points so the goose lingers longer
+  const stops = 4 + Math.floor(Math.random() * 3);
   for (let i = 0; i < stops; i++) {
     await walkGooseTo(goose, randomTargetInViewport());
     await pauseAndAct(goose);
@@ -321,7 +321,7 @@ function walkGooseTo(goose, target) {
     const dx = target.x - fromX;
     const dy = target.y - fromY;
     const distance = Math.hypot(dx, dy);
-    const speedPxPerSec = 110 + Math.random() * 40; // 110–150 px/s waddle
+    const speedPxPerSec = 55 + Math.random() * 25; // 55–80 px/s slow waddle
     const durationMs = Math.max(700, (distance / speedPxPerSec) * 1000);
 
     setDir(goose, dx > 0);
@@ -343,13 +343,13 @@ function pauseAndAct(goose) {
     const r = Math.random();
     if (r < 0.40) {
       dropGift(goose);
-      setTimeout(resolve, 700);
+      setTimeout(resolve, 1400);
     } else if (r < 0.75) {
       playQuackVarying(0.85, 1.25);
-      setTimeout(resolve, 500);
+      setTimeout(resolve, 1100);
     } else {
-      // Just stand and stare
-      setTimeout(resolve, 800);
+      // Just stand and stare for a beat
+      setTimeout(resolve, 1600);
     }
   });
 }
