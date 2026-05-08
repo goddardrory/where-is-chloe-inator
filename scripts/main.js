@@ -22,6 +22,7 @@ let lastStateKey = null;     // re-animalese only when this changes
 let bubbleReady = false;     // gated until Acedio + Doof overlay are done
 
 const VISITED_KEY = 'whereischloe.visited';
+const NAME_KEY    = 'whereischloe.userName';
 
 async function init() {
   // Kick off Acedio's WAV preload immediately so it's ready by the time the
@@ -325,22 +326,31 @@ function initAudioControls() {
 
 // === First-visit splash ===
 //
-// Shows a small "Click anywhere to begin" screen. Resolves on the first user
-// gesture so audio is unlocked before the Doof overlay opens its jingle.
+// Asks for the visitor's name. Submitting (or skipping) is the gesture that
+// unlocks audio for the Doof overlay's jingle and bg-music. The name is
+// stored in localStorage and pre-fills the message wall on every visit.
 function showSplash() {
   return new Promise((resolve) => {
     const splash = document.getElementById('splash-overlay');
-    if (!splash) { resolve(); return; }
-    splash.classList.add('is-open');
+    const form   = document.getElementById('splash-form');
+    const input  = document.getElementById('splash-name');
+    const skip   = document.getElementById('splash-skip');
+    if (!splash || !form) { resolve(); return; }
 
-    const onGesture = () => {
-      splash.removeEventListener('click', onGesture);
-      document.removeEventListener('keydown', onGesture);
+    splash.classList.add('is-open');
+    setTimeout(() => { try { input && input.focus(); } catch {} }, 250);
+
+    const finish = (name) => {
+      try { if (name) localStorage.setItem(NAME_KEY, name); } catch {}
       splash.classList.remove('is-open');
       resolve();
     };
-    splash.addEventListener('click', onGesture);
-    document.addEventListener('keydown', onGesture);
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      finish((input && input.value || '').trim());
+    });
+    if (skip) skip.addEventListener('click', () => finish(''));
   });
 }
 

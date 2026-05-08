@@ -189,14 +189,26 @@
     </button>
   </div>
 
-  <!-- FIRST-VISIT SPLASH (one click to unlock audio + greet) -->
+  <!-- FIRST-VISIT SPLASH: name prompt unlocks audio + pre-fills message wall -->
   <div class="splash-overlay" id="splash-overlay" role="dialog" aria-label="Welcome">
-    <div class="splash-content">
+    <form class="splash-content" id="splash-form" autocomplete="off">
       <img class="splash-portrait" src="assets/img/tom-nook.png" alt="" />
       <div class="splash-eyebrow">NOOK INC. TRAVEL BUREAU</div>
       <h2 class="splash-title">Hooo! Welcome, traveler!</h2>
-      <p class="splash-sub">Click anywhere to follow Chloe's journey.</p>
-    </div>
+      <p class="splash-sub">What shall we call you, hm-hmm?</p>
+      <input
+        type="text"
+        class="splash-input"
+        id="splash-name"
+        name="name"
+        placeholder="Your name"
+        maxlength="40"
+        autocomplete="name"
+        required
+      />
+      <button type="submit" class="splash-button">Begin journey ✨</button>
+      <button type="button" class="splash-skip" id="splash-skip">Skip</button>
+    </form>
   </div>
 
   <!-- TOAST CONTAINER -->

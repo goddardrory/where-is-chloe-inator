@@ -8,6 +8,15 @@ export function initMessages() {
   const form = document.getElementById('message-form');
   const counter = document.getElementById('char-counter');
   const textarea = document.getElementById('message-text');
+  const nameField = document.getElementById('message-name');
+
+  // Pre-fill name from the splash entry. User can still edit it per submit.
+  if (nameField && !nameField.value) {
+    try {
+      const saved = localStorage.getItem('whereischloe.userName');
+      if (saved) nameField.value = saved;
+    } catch {}
+  }
 
   if (textarea && counter) {
     const update = () => { counter.textContent = `${textarea.value.length} / 280`; };

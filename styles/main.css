@@ -982,9 +982,56 @@ input, textarea, button {
   font-size: 14px;
   font-weight: 700;
   color: var(--nook);
-  margin: 0;
-  animation: splash-pulse 1.6s ease-in-out infinite;
+  margin: 0 0 14px;
 }
+
+.splash-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid var(--sand);
+  border-radius: var(--radius-sm);
+  font-size: 16px;
+  font-weight: 700;
+  background: #fffdf6;
+  color: var(--ink);
+  margin-bottom: 12px;
+  text-align: center;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.splash-input:focus {
+  outline: none;
+  border-color: var(--leaf);
+  box-shadow: 0 0 0 3px rgba(92, 184, 92, 0.25);
+}
+
+.splash-button {
+  width: 100%;
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-deep) 100%);
+  color: var(--nook-deep);
+  font-weight: 900;
+  font-size: 15px;
+  padding: 12px 18px;
+  border-radius: var(--radius-pill);
+  letter-spacing: 0.5px;
+  box-shadow: 0 3px 0 var(--gold-deep);
+  transition: transform 0.1s, box-shadow 0.1s;
+  margin-bottom: 6px;
+}
+.splash-button:hover { transform: translateY(-1px); box-shadow: 0 4px 0 var(--gold-deep); }
+.splash-button:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--gold-deep); }
+
+.splash-skip {
+  background: transparent;
+  color: var(--nook);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 12px;
+  text-decoration: underline;
+  letter-spacing: 0.3px;
+  opacity: 0.7;
+}
+.splash-skip:hover { opacity: 1; }
 
 @keyframes splash-pop {
   0%   { opacity: 0; transform: scale(0.85); }
