@@ -1,6 +1,6 @@
 import { playPerry, playPerryTheme, playQuack, playQuackVarying, playBomboclaat, playExplosion, playCreeperHiss, playDoofJingle, playLizardKing, playDwightSlut, playTwss } from './audio.js';
 import { showToast } from './toast.js';
-import { silence as silenceBgMusic } from './bg-music.js';
+import { silence as silenceBgMusic, mute as muteBgMusic, unmute as unmuteBgMusic } from './bg-music.js';
 import { recordBomb } from './resetti-scold.js';
 import { addMiles, awardAchievement } from './nook-miles.js';
 
@@ -370,18 +370,34 @@ function initRogueDuck() {
   setTimeout(() => beginGooseVisit(goose), 25_000);
 }
 
-// Rare cinematic on goose click: blacks out the page, slow-zooms onto the
-// goose to the soundtrack of "lizard king", then quietly releases as if
-// nothing happened. ~14.5 seconds total. Awards miles + achievement.
+// Rare cinematic on goose click. Three phases:
+//   Phase 1 (0  → ~11.5s): blackout + slow zoom to scale 6 on the goose
+//                          while the lizard king audio plays
+//   Phase 2 (~11.5s, instant): HARD-CUT to a deep face zoom — origin shifts
+//                              to the head, scale jumps to 22, duck holds still
+//   Phase 3 (~11.5s → ~14.5s): hold the face zoom for the final 3 seconds
+//   Phase 4 (~14.5s): fade back to normal, restore audio
+//
+// All bg-music is muted at the start and faded back in at the end. Awards
+// miles + achievement.
 function lizardKingSequence(goose) {
   if (cinematicActive) return;
   cinematicActive = true;
 
+  // Silence everything else immediately so the lizard king audio stands alone.
+  muteBgMusic();
+
   const facing = currentDirTransform(goose);
   const originalZ = getComputedStyle(goose).zIndex;
+  const elemHeight = goose.offsetHeight || 70;
+  // Head sits roughly at 22% from the top of the goose sprite. Translating
+  // down by (50% - 22%) of element height lets the head land at viewport
+  // centre when scale jumps from origin-centre to origin-head.
+  const headTranslateY = elemHeight * 0.28;
 
   // Snapshot any in-flight transition; we want a clean baseline to animate from
   goose.style.transition = 'none';
+  goose.style.transformOrigin = '50% 50%';
   goose.style.transform = facing;
 
   const blackout = document.createElement('div');
@@ -404,18 +420,33 @@ function lizardKingSequence(goose) {
   const dy = window.innerHeight / 2 - (rect.top  + rect.height / 2);
   const zoomMs = LIZARD_DURATION_MS - LIZARD_HOLD_MS;
 
+  // Phase 1 — slow zoom
   goose.style.transition = `transform ${zoomMs}ms ease-in-out`;
   goose.style.transform = `translate(${dx}px, ${dy}px) ${facing} scale(6)`;
 
-  // After audio ends, fade everything back to normal
+  // Phase 2 — hard cut to a deep face zoom. transform-origin moves to the
+  // head so scale grows around it, and we translate down to keep the head
+  // at viewport centre.
+  setTimeout(() => {
+    if (!cinematicActive) return;
+    goose.style.transition = 'none';
+    goose.style.transformOrigin = '50% 22%';
+    goose.style.transform =
+      `translate(${dx}px, ${dy + headTranslateY}px) ${facing} scale(22)`;
+  }, zoomMs);
+
+  // Phase 4 — fade back to normal at total duration
   setTimeout(() => {
     blackout.classList.remove('is-on');
     goose.style.transition = 'transform 0.55s ease-out';
+    goose.style.transformOrigin = '50% 50%';
     goose.style.transform = facing;
     setTimeout(() => {
       blackout.remove();
       goose.style.zIndex = originalZ === 'auto' ? '40' : originalZ;
       cinematicActive = false;
+      // Audio fades back in
+      unmuteBgMusic();
     }, 650);
   }, LIZARD_DURATION_MS);
 }
