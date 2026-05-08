@@ -111,6 +111,47 @@ input, textarea, button {
   z-index: 1;
 }
 
+/* Chloe portrait — top-right corner of hero, circular, AC-framed */
+.hero-portrait {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  z-index: 2;
+}
+
+.hero-portrait img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #fff;
+  box-shadow: 0 0 0 3px var(--gold), 0 6px 16px rgba(91, 184, 92, 0.3);
+  background: var(--cream);
+  display: block;
+}
+
+.hero-portrait-tag {
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  color: var(--nook-deep);
+  background: var(--gold);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  border: 2px solid #fff;
+  white-space: nowrap;
+}
+
+/* Push hero text away from the portrait so they don't collide */
+.hero-eyebrow,
+.hero-title {
+  padding-right: 100px;
+}
+
 .hero-eyebrow {
   font-size: 10px;
   font-weight: 900;

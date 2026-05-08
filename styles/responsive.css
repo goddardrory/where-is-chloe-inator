@@ -6,6 +6,10 @@
 
   .hero-inner { padding: 28px 30px 30px; }
 
+  .hero-portrait img { width: 100px; height: 100px; }
+  .hero-portrait { top: 20px; right: 24px; }
+  .hero-eyebrow, .hero-title { padding-right: 130px; }
+
   .map-frame { height: 440px; }
 
   .flight-card {
