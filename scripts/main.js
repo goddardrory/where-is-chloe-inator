@@ -4,6 +4,7 @@ import { narrate, randomNookQuote } from './nook-narrator.js';
 import { typeAnimalese, cancelAnimalese, preloadAcedio, whenAcedioReady } from './animalese.js';
 import { start as startBgMusic, crossFadeTo as bgCrossFade, mute as muteBg, unmute as unmuteBg } from './bg-music.js';
 import { isOwed as isResettiOwed, showScold as showResettiScold } from './resetti-scold.js';
+import { getBonusMiles, addMiles, awardAchievement } from './nook-miles.js';
 import { formatCountdown } from './countdown.js';
 import { initEasterEggs, spawnConfetti, whenInitialDoofClosed, spawnFlyBy } from './easter-eggs.js';
 import { initMessages } from './messages.js';
@@ -28,6 +29,22 @@ async function init() {
   // Kick off Acedio's WAV preload immediately so it's ready by the time the
   // first Tom Nook line is due to type out.
   preloadAcedio();
+
+  // Listen for miles + achievement events (fired from nook-miles.js)
+  document.addEventListener('miles-change', (e) => {
+    const chip = document.getElementById('miles-chip');
+    if (!chip) return;
+    chip.classList.add('flash');
+    // Tone the flash class to indicate gain vs loss
+    chip.classList.toggle('flash-loss', (e.detail.delta || 0) < 0);
+    setTimeout(() => chip.classList.remove('flash', 'flash-loss'), 700);
+  });
+  document.addEventListener('achievement', (e) => {
+    const { label, miles } = e.detail || {};
+    const sign = miles && miles < 0 ? '−' : '+';
+    const amount = miles ? `${sign}${Math.abs(miles)} mi` : '';
+    showToast(`★ ${label} ${amount}`, miles && miles < 0 ? 'bankruptcy' : 'success', 4500);
+  });
 
   // If they detonated the site on a previous visit, Resetti has a word for
   // them before anything else loads.
@@ -61,6 +78,8 @@ async function init() {
 
   tick();
   setInterval(tick, TICK_MS);
+  startAirlineAnnouncements();
+  initInteractiveMiles();
 
   // Wait for the Doof overlay to dismiss AND for Acedio to be loaded before
   // we start typing Tom Nook quotes — otherwise the first quote uses the
@@ -112,7 +131,8 @@ function tick() {
     }
   }
 
-  setText('miles-count', miles);
+  // Total miles = flight-derived base + interactive bonus from localStorage
+  setText('miles-count', miles + getBonusMiles());
 
   const fill = document.getElementById('progress-fill');
   if (fill) fill.style.width = `${(progress * 100).toFixed(2)}%`;
@@ -138,18 +158,60 @@ function onPhaseChange(prevPhase, newState) {
     case 'in-flight':
       showToast(`✈️ Flight ${newState.flight.num} is airborne!`, 'success', 5000);
       bgCrossFade('air');
+      awardAchievement(`leg-airborne-${newState.index}`, `Flight ${newState.flight.num} airborne!`, 100);
       break;
     case 'layover':
       showToast(`🥨 Pretzel Day! On layover at ${newState.atAirport}`, '', 5000);
       bgCrossFade('ground');
+      awardAchievement(`leg-landed-${newState.fromFlight.num}`, `${newState.fromFlight.num} landed safely!`, 200);
       break;
     case 'arrived':
       showToast(`🎉 Welcome to Durban, ${newState.finalFlight.arr.city}!`, 'success', 8000);
       spawnConfetti(60);
+      spawnBellRain(80);
       playPerryTheme();
       bgCrossFade('ground');
+      awardAchievement('arrival', 'Safely in Durban!', 1500);
       break;
   }
+}
+
+// Cascading rain of bells/coins for celebration moments.
+function spawnBellRain(count = 60) {
+  const symbols = ['🪙', '💰', '⭐', '🍃', '✨'];
+  for (let i = 0; i < count; i++) {
+    const bell = document.createElement('div');
+    bell.className = 'bell-rain';
+    bell.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+    bell.style.left = `${Math.random() * 100}vw`;
+    bell.style.animationDelay = `${Math.random() * 1.8}s`;
+    bell.style.animationDuration = `${3 + Math.random() * 2.2}s`;
+    document.body.appendChild(bell);
+    setTimeout(() => bell.remove(), 6500);
+  }
+}
+
+// Tom Nook airline announcements: a soft toast every 12-20 minutes while
+// Chloe is airborne. Uses the existing toast infrastructure.
+function startAirlineAnnouncements() {
+  const fire = () => {
+    const state = computeState(new Date());
+    if (state.phase === 'in-flight') {
+      const lines = [
+        `Hooo! Currently cruising over ${state.region}, yes yes!`,
+        `Tom Nook says: "Cabin pressure stable. Loan repayment also stable, hooo."`,
+        `Yes yes, ${Math.round(state.progress * 100)}% across ${state.flight.dep.city}→${state.flight.arr.city}, hm-hmm.`,
+        `Above ${state.region}. The Bells are rolling in, yes yes! …to me, mostly.`,
+        `Pretzel update: served, probably stale, charged extra. Stanley would weep, hm-hmm.`,
+        `Hooo! Captain reports tailwinds AND favourable financing terms. Both rare!`,
+        `Yes yes, do enjoy the in-flight catalogue. Page 47 has the loan schedule, hooo.`,
+      ];
+      showToast(`🦝 ${lines[Math.floor(Math.random() * lines.length)]}`, '', 6000);
+    }
+    setTimeout(fire, (12 + Math.random() * 8) * 60_000);
+  };
+  // First announcement 5-10 min after init so visitors aren't bombarded immediately
+  setTimeout(fire, (5 + Math.random() * 5) * 60_000);
 }
 
 // === Render flight cards (once on init) ===
@@ -312,6 +374,8 @@ function initAudioControls() {
     perryBtn.addEventListener('click', () => {
       playPerry();
       spawnFlyBy('🕵️', 'assets/img/perry-fly.png', { heightPx: 280 });
+      addMiles(2, 'summon Perry');
+      awardAchievement('perry-summon', 'Perryyyyy summoned!', 40);
     });
   }
   if (kkToggle) {
@@ -388,6 +452,50 @@ function showSplash() {
     });
     if (skip) skip.addEventListener('click', () => finish(''));
   });
+}
+
+// === Interactive miles wiring ===
+//
+// Hooks click handlers on small interactive elements so family poking around
+// the page racks up Nook Miles. First time triggering each gets a toast via
+// awardAchievement; repeats just nudge the counter.
+function initInteractiveMiles() {
+  // Tom Nook avatar — pet him for a small bonus + replay a famous quote
+  const nookAvatar = document.querySelector('.nook-avatar');
+  if (nookAvatar) {
+    nookAvatar.style.cursor = 'pointer';
+    nookAvatar.addEventListener('click', () => {
+      addMiles(2, 'pet Tom Nook');
+      awardAchievement('pet-nook', 'Tom Nook says hi!', 30);
+      const bubble = document.getElementById('nook-bubble');
+      if (bubble) {
+        lastStateKey = null; // force the next tick to refresh state line
+        typeAnimalese(bubble, randomNookQuote());
+      }
+    });
+  }
+
+  // Flight cards — tap to "inspect"
+  document.querySelectorAll('.flight-card').forEach((card) => {
+    card.style.cursor = 'pointer';
+    card.addEventListener('click', () => {
+      addMiles(2, 'inspect flight');
+      awardAchievement('inspect-flight', 'Flight inspected!', 25);
+      card.style.transition = 'transform 0.18s ease';
+      card.style.transform = 'scale(1.02)';
+      setTimeout(() => { card.style.transform = ''; }, 200);
+    });
+  });
+
+  // Hero name (Chloe) — tiny easter pat
+  const heroName = document.querySelector('.hero-name');
+  if (heroName) {
+    heroName.style.cursor = 'pointer';
+    heroName.addEventListener('click', () => {
+      addMiles(1, 'tap Chloe');
+      awardAchievement('tap-chloe', 'Hi Chloe!', 50);
+    });
+  }
 }
 
 // === Tiny helper ===

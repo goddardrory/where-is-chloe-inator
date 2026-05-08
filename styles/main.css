@@ -146,11 +146,12 @@ input, textarea, button {
   white-space: nowrap;
 }
 
-/* Push hero text away from the portrait so they don't collide */
+/* Push hero text away from the portrait + "TODAY'S TRAVELER" tag (the tag
+   is wider than the portrait, so the padding has to clear the wider element). */
 .hero-eyebrow,
 .hero-title,
 .nook-row {
-  padding-right: 100px;
+  padding-right: 150px;
 }
 
 .hero-eyebrow {

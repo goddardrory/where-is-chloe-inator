@@ -75,6 +75,35 @@
 
 .nook-bubble { animation: nook-wobble 5s ease-in-out infinite; transform-origin: 0 50%; }
 
+/* === Miles chip flash on award/loss === */
+@keyframes miles-flash {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.20); box-shadow: 0 0 22px var(--gold), 0 2px 0 rgba(212,168,20,0.4); }
+  100% { transform: scale(1); }
+}
+@keyframes miles-flash-loss {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(0.86); filter: grayscale(0.6) brightness(0.7); }
+  100% { transform: scale(1); }
+}
+.miles-chip.flash       { animation: miles-flash      0.7s ease-out; }
+.miles-chip.flash-loss  { animation: miles-flash-loss 0.7s ease-out; }
+
+/* === Bell rain on arrival === */
+@keyframes bell-fall {
+  0%   { transform: translateY(-20vh) rotate(0deg);   opacity: 1; }
+  100% { transform: translateY(110vh) rotate(540deg); opacity: 0; }
+}
+.bell-rain {
+  position: fixed;
+  top: -20px;
+  font-size: 28px;
+  z-index: 150;
+  pointer-events: none;
+  animation: bell-fall 3.6s linear forwards;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.18));
+}
+
 /* === Confetti for arrival === */
 @keyframes confetti-fall {
   0%   { transform: translateY(-20vh) rotate(0deg);   opacity: 1; }

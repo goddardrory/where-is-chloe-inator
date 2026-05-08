@@ -2,6 +2,7 @@ import { playPerry, playPerryTheme, playQuack, playQuackVarying, playBomboclaat,
 import { showToast } from './toast.js';
 import { silence as silenceBgMusic } from './bg-music.js';
 import { recordBomb } from './resetti-scold.js';
+import { addMiles, awardAchievement } from './nook-miles.js';
 
 const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
 
@@ -85,6 +86,8 @@ function activateKonami() {
   document.body.classList.add('konami');
   playPerryTheme();
   showToast('🎩 AGENT MODE ACTIVATED', 'success', 4000);
+  awardAchievement('konami', 'Agent mode unlocked!', 250);
+  addMiles(50, 'konami code');
   setTimeout(() => document.body.classList.remove('konami'), 30000);
 }
 
@@ -98,6 +101,7 @@ function initDoofTyping() {
     if (buffer === target) {
       buffer = '';
       showDoof();
+      awardAchievement('doof-typed', 'Doof summoned!', 75);
     }
   });
 }
@@ -161,6 +165,7 @@ function initTriStateTyping() {
     if (buffer === target) {
       buffer = '';
       showDoof('tristate');
+      awardAchievement('tristate-typed', 'Tri-State Area in jeopardy!', 100);
     }
   });
 }
@@ -190,6 +195,10 @@ function detonate() {
   // Increment the bomb counter now so even a fast tab-close doesn't escape
   // Resetti, and the escalation level reflects the latest detonation.
   recordBomb();
+  // Detonation has consequences — Tom Nook's loan office takes a 1,000 mile
+  // hit out of your account. Toast fires before the page goes black.
+  addMiles(-1000, 'detonation');
+  showToast('💸 −1,000 NOOK MILES', 'bankruptcy', 1800);
 
   // Sequence: creeper hiss (~2.9s) → bomboclaat lands at the apex →
   // explosion sound + visual blast.
@@ -289,8 +298,10 @@ function initRogueDuck() {
       return;
     }
 
-    // Casual interaction: quack + a tiny bounce
+    // Casual interaction: quack + a tiny bounce + small mile bonus
     playQuackVarying(0.7, 1.6);
+    addMiles(3, 'goose pet');
+    awardAchievement('first-quack', 'First quack!', 30);
     const base = currentDirTransform(goose);
     goose.style.transition = 'transform 0.15s ease';
     goose.style.transform = `${base} scale(1.18)`;
@@ -311,6 +322,7 @@ function initRogueDuck() {
 function panicAndExit(goose) {
   goosePanicking = true;
   playQuackVarying(0.6, 1.5);
+  awardAchievement('scared-goose', 'You scared the goose!', 80);
   setSprite(goose, 'flyaway');
   // Make sure the goose is "facing" its exit direction
   const exitsRight = (goose.offsetLeft + (goose.offsetWidth || 60) / 2) > window.innerWidth / 2;

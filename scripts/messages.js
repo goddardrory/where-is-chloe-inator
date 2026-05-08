@@ -1,5 +1,6 @@
 import { showToast } from './toast.js';
 import { formatRelative } from './countdown.js';
+import { addMiles, awardAchievement } from './nook-miles.js';
 
 const FEED_URL = '/.netlify/functions/get-messages';
 const REFRESH_MS = 60_000;
@@ -56,6 +57,8 @@ async function onSubmit(e) {
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     showToast('Hooo! Message delivered, yes yes 🍃', 'success');
+    addMiles(75, 'message posted');
+    awardAchievement('first-message', 'First message posted!', 250);
     form.reset();
     const counter = document.getElementById('char-counter');
     if (counter) counter.textContent = '0 / 280';
