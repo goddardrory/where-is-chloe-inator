@@ -966,6 +966,205 @@ input, textarea, button {
   cursor: wait;
 }
 
+/* === Resetti escalation levels === */
+
+/* Level 2 — louder, slight shake, redder background */
+.resetti-overlay[data-level="2"] {
+  background:
+    radial-gradient(circle at 50% 25%, rgba(239, 68, 68, 0.45), transparent 55%),
+    rgba(28, 6, 4, 0.96);
+}
+.resetti-overlay[data-level="2"] .resetti-content {
+  animation: resetti-shake-mild 0.18s ease-in-out infinite alternate;
+  box-shadow: 0 0 100px rgba(239, 68, 68, 0.55);
+}
+.resetti-overlay[data-level="2"] .resetti-title {
+  font-size: 24px;
+  color: #fda4af;
+}
+
+/* Level 3 — full anger: stronger shake, flickering red flash, two portraits */
+.resetti-overlay[data-level="3"] {
+  background:
+    radial-gradient(circle at 50% 30%, rgba(220, 38, 38, 0.6), transparent 55%),
+    rgba(40, 0, 0, 0.97);
+  animation: resetti-flash 0.6s steps(2) infinite;
+}
+.resetti-overlay[data-level="3"] .resetti-content {
+  animation: resetti-shake-medium 0.12s ease-in-out infinite alternate;
+  box-shadow: 0 0 140px rgba(239, 68, 68, 0.7);
+  border-color: #fca5a5;
+}
+.resetti-overlay[data-level="3"] .resetti-title {
+  font-size: 28px;
+  color: #ffeb38;
+  text-shadow: 0 0 12px rgba(239, 68, 68, 0.8);
+}
+.resetti-overlay[data-level="3"] .resetti-portrait {
+  animation: resetti-portrait-bounce 0.3s ease-in-out infinite alternate;
+}
+
+/* Level 4 — unhinged: glitchy tilt, multiple ghost portraits, jagged border */
+.resetti-overlay[data-level="4"] {
+  background:
+    radial-gradient(circle at 50% 30%, rgba(220, 38, 38, 0.7), transparent 50%),
+    rgba(50, 0, 0, 0.98);
+  animation: resetti-flash 0.32s steps(2) infinite;
+}
+.resetti-overlay[data-level="4"] .resetti-content {
+  animation: resetti-shake-violent 0.08s ease-in-out infinite alternate, resetti-tilt 1.3s ease-in-out infinite;
+  box-shadow:
+    -12px 0 0 rgba(255, 0, 0, 0.5),
+    12px 0 0 rgba(0, 200, 255, 0.5),
+    0 0 180px rgba(239, 68, 68, 0.85);
+  border-color: #fef08a;
+  border-style: dashed;
+}
+.resetti-overlay[data-level="4"] .resetti-portrait {
+  animation: resetti-portrait-glitch 0.12s steps(3) infinite;
+  filter: drop-shadow(-6px 0 0 #ef4444) drop-shadow(6px 0 0 #06b6d4);
+}
+.resetti-overlay[data-level="4"] .resetti-title {
+  font-size: 30px;
+  color: #fde047;
+  letter-spacing: 2px;
+  animation: resetti-text-glitch 0.18s steps(4) infinite;
+}
+.resetti-overlay[data-level="4"] .resetti-rant {
+  background: rgba(0, 0, 0, 0.55);
+  border-style: solid;
+  border-color: #ef4444;
+}
+
+/* Level 5 — total breakdown: tiled portraits, color cycling, full chaos */
+.resetti-overlay[data-level="5"] {
+  background:
+    radial-gradient(circle at 50% 30%, rgba(220, 38, 38, 0.85), transparent 45%),
+    rgba(60, 0, 0, 1);
+  animation: resetti-flash-violent 0.16s steps(2) infinite, resetti-hue 2s linear infinite;
+}
+.resetti-overlay[data-level="5"]::before,
+.resetti-overlay[data-level="5"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url('../assets/img/resetti-angry.png');
+  background-repeat: repeat;
+  background-size: 110px 92px;
+  opacity: 0.22;
+  z-index: 0;
+  pointer-events: none;
+  animation: resetti-tile-drift 6s linear infinite;
+}
+.resetti-overlay[data-level="5"]::after {
+  background-size: 140px 117px;
+  opacity: 0.16;
+  animation-direction: reverse;
+  animation-duration: 8s;
+}
+.resetti-overlay[data-level="5"] .resetti-content {
+  position: relative;
+  z-index: 1;
+  animation:
+    resetti-shake-violent 0.06s ease-in-out infinite alternate,
+    resetti-tilt 0.7s ease-in-out infinite,
+    resetti-content-pulse 0.35s ease-in-out infinite alternate;
+  box-shadow:
+    -16px 0 0 rgba(255, 0, 0, 0.6),
+    16px 0 0 rgba(0, 200, 255, 0.6),
+    0 0 220px rgba(239, 68, 68, 1);
+  border-color: #fff;
+  border-style: double;
+}
+.resetti-overlay[data-level="5"] .resetti-portrait {
+  animation: resetti-portrait-glitch 0.08s steps(4) infinite;
+  filter: drop-shadow(-9px 0 0 #ef4444) drop-shadow(9px 0 0 #06b6d4) drop-shadow(0 0 12px #fbbf24);
+}
+.resetti-overlay[data-level="5"] .resetti-title {
+  font-size: 34px;
+  letter-spacing: 3px;
+  animation: resetti-text-glitch 0.1s steps(5) infinite, resetti-hue 1.4s linear infinite;
+}
+.resetti-overlay[data-level="5"] .resetti-line {
+  animation: resetti-text-glitch 0.18s steps(5) infinite;
+}
+.resetti-overlay[data-level="5"] .resetti-rant {
+  background: rgba(0, 0, 0, 0.7);
+  border-style: double;
+  border-color: #fef08a;
+}
+
+/* === Resetti escalation keyframes === */
+@keyframes resetti-shake-mild {
+  0%   { transform: translate(-1px, 0); }
+  100% { transform: translate(1px, 1px); }
+}
+@keyframes resetti-shake-medium {
+  0%   { transform: translate(-3px, -1px) rotate(-0.3deg); }
+  100% { transform: translate(3px, 1px) rotate(0.3deg); }
+}
+@keyframes resetti-shake-violent {
+  0%   { transform: translate(-6px, -3px) rotate(-0.7deg); }
+  100% { transform: translate(6px, 3px) rotate(0.7deg); }
+}
+@keyframes resetti-tilt {
+  0%, 100% { transform: rotate(0deg); }
+  25%      { transform: rotate(-1.5deg); }
+  75%      { transform: rotate(1.5deg); }
+}
+@keyframes resetti-flash {
+  0%   { filter: brightness(1); }
+  100% { filter: brightness(1.3); }
+}
+@keyframes resetti-flash-violent {
+  0%   { filter: brightness(1) saturate(1); }
+  100% { filter: brightness(1.6) saturate(1.5); }
+}
+@keyframes resetti-hue {
+  0%   { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+@keyframes resetti-portrait-bounce {
+  0%   { transform: translateY(0) scale(1); }
+  100% { transform: translateY(-6px) scale(1.03); }
+}
+@keyframes resetti-portrait-glitch {
+  0%   { transform: translate(-3px, 0); }
+  33%  { transform: translate(3px, -2px); }
+  66%  { transform: translate(-2px, 2px); }
+  100% { transform: translate(2px, 0); }
+}
+@keyframes resetti-text-glitch {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(-2px, 1px); }
+  50%  { transform: translate(2px, -1px); }
+  75%  { transform: translate(-1px, 2px); }
+  100% { transform: translate(1px, -1px); }
+}
+@keyframes resetti-tile-drift {
+  0%   { background-position: 0 0; }
+  100% { background-position: 220px 184px; }
+}
+@keyframes resetti-content-pulse {
+  0%   { transform: scale(1); }
+  100% { transform: scale(1.02); }
+}
+
+/* Reduced motion: drop the worst escalation effects */
+@media (prefers-reduced-motion: reduce) {
+  .resetti-overlay[data-level] .resetti-content,
+  .resetti-overlay[data-level] .resetti-portrait,
+  .resetti-overlay[data-level] .resetti-title,
+  .resetti-overlay[data-level] .resetti-line,
+  .resetti-overlay[data-level]::before,
+  .resetti-overlay[data-level]::after {
+    animation: none !important;
+  }
+  .resetti-overlay[data-level] {
+    animation: none !important;
+  }
+}
+
 /* === DOOF OVERLAY === */
 .doof-overlay {
   position: fixed;
