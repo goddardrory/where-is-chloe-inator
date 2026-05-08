@@ -5,24 +5,27 @@ const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRi
 
 // Doof rotates between his evil schemes on each appearance.
 const DOOF_SCHEMES = [
-  { emoji: '🧪', title: 'BEHOLD! THE WHERE-IS-CHLOE-INATOR!',          sub: '— Dr. Heinz Doofenshmirtz' },
-  { emoji: '🌆', title: 'AND I SHALL TAKE OVER THE ENTIRE TRI-STATE AREA!', sub: '— Dr. Heinz Doofenshmirtz, Evil Inc.' },
-  { emoji: '⚡', title: 'BEHOLD! THE FLIGHT-DELAY-INATOR!',              sub: '(curse you, Perry the Platypus!)' },
-  { emoji: '🛬', title: 'I SHALL REROUTE THIS PLANE TO DRUSSELSTEIN!',  sub: '— Dr. Heinz Doofenshmirtz' },
-  { emoji: '🥨', title: 'BEHOLD! THE INFINITE-PRETZEL-INATOR!',         sub: '(an unrelated scheme, but still evil)' },
+  { id: 'chloe',     emoji: '🧪', title: 'BEHOLD! THE WHERE-IS-CHLOE-INATOR!',          sub: '— Dr. Heinz Doofenshmirtz' },
+  { id: 'tristate',  emoji: '🌆', title: 'AND I SHALL TAKE OVER THE ENTIRE TRI-STATE AREA!', sub: '— Dr. Heinz Doofenshmirtz, Evil Inc.' },
+  { id: 'delay',     emoji: '⚡', title: 'BEHOLD! THE FLIGHT-DELAY-INATOR!',              sub: '(curse you, Perry the Platypus!)' },
+  { id: 'drussel',   emoji: '🛬', title: 'I SHALL REROUTE THIS PLANE TO DRUSSELSTEIN!',  sub: '— Dr. Heinz Doofenshmirtz' },
+  { id: 'pretzel',   emoji: '🥨', title: 'BEHOLD! THE INFINITE-PRETZEL-INATOR!',         sub: '(an unrelated scheme, but still evil)' },
 ];
+
+const DOOF_DISMISS_MS = 8000;
 
 export function initEasterEggs() {
   initLogoClick();
   initKonami();
   initDoofTyping();
+  initTriStateTyping();
   initBomboclaatTyping();
   initRogueDuck();
   initLeaves();
 
   // Show the Doof overlay on page load so visitors see it without having to
-  // discover the `doof` typing trigger. The same dismissal logic applies.
-  setTimeout(showDoof, 500);
+  // discover the typing triggers. The same dismissal logic applies.
+  setTimeout(() => showDoof(), 500);
 }
 
 // === Logo click: "Perryyy!" ===
@@ -85,12 +88,15 @@ function initDoofTyping() {
   });
 }
 
-function showDoof() {
+// Show the Doof overlay. Optionally force a specific scheme by id.
+function showDoof(forceId) {
   const overlay = document.getElementById('doof-overlay');
   if (!overlay) return;
 
-  // Pick a random scheme and apply it to the overlay
-  const scheme = DOOF_SCHEMES[Math.floor(Math.random() * DOOF_SCHEMES.length)];
+  const scheme = forceId
+    ? (DOOF_SCHEMES.find((s) => s.id === forceId) || DOOF_SCHEMES[0])
+    : DOOF_SCHEMES[Math.floor(Math.random() * DOOF_SCHEMES.length)];
+
   const emojiEl = document.getElementById('doof-emoji');
   const titleEl = document.getElementById('doof-title');
   const subEl   = document.getElementById('doof-sub');
@@ -114,7 +120,21 @@ function showDoof() {
 
   overlay.addEventListener('click', onClick);
   document.addEventListener('keydown', onKey);
-  const timer = setTimeout(close, 4500);
+  const timer = setTimeout(close, DOOF_DISMISS_MS);
+}
+
+// === Type "tristate" anywhere → force the tri-state-area Doof scheme ===
+function initTriStateTyping() {
+  const target = 'tristate';
+  let buffer = '';
+  document.addEventListener('keydown', (e) => {
+    if (e.key.length !== 1) return;
+    buffer = (buffer + e.key.toLowerCase()).slice(-target.length);
+    if (buffer === target) {
+      buffer = '';
+      showDoof('tristate');
+    }
+  });
 }
 
 // === Type "bomb" anywhere → Resetti yells BOMBOCLAAT ===
