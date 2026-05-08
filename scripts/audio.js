@@ -126,10 +126,33 @@ export function playCreeperHiss() {
 }
 
 // === Doof jingle: plays when the Doof overlay opens ===
+//
+// On the very first page load, browsers usually block autoplay until the
+// user has interacted. If that happens, we register a one-time pointerdown
+// /keydown listener so the jingle fires the moment they engage (often the
+// click/key that dismisses the overlay).
+let doofJingleQueued = false;
 export function playDoofJingle() {
   const audio = load('doofJingle');
-  if (audio) tryPlay(audio.cloneNode(), () => fallbackMelody());
-  else fallbackMelody();
+  if (!audio) { fallbackMelody(); return; }
+
+  const playOnce = () => {
+    const inst = audio.cloneNode();
+    tryPlay(inst, () => {
+      if (doofJingleQueued) return;
+      doofJingleQueued = true;
+      const onGesture = () => {
+        document.removeEventListener('pointerdown', onGesture, true);
+        document.removeEventListener('keydown', onGesture, true);
+        doofJingleQueued = false;
+        playOnce();
+      };
+      document.addEventListener('pointerdown', onGesture, { capture: true, once: true });
+      document.addEventListener('keydown',     onGesture, { capture: true, once: true });
+    });
+  };
+
+  playOnce();
 }
 
 // === Explosion: white-noise burst ===
