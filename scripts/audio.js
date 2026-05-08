@@ -49,6 +49,18 @@ export function playQuack() {
   else fallbackBeep(220, 0.18);
 }
 
+// Variable-pitch quack via playbackRate — the goose has a range
+export function playQuackVarying(min = 0.75, max = 1.4) {
+  const audio = load('quack');
+  if (!audio) {
+    fallbackBeep(180 + Math.random() * 120, 0.18);
+    return;
+  }
+  const inst = audio.cloneNode();
+  inst.playbackRate = min + Math.random() * (max - min);
+  tryPlay(inst, () => fallbackBeep(180 + Math.random() * 120, 0.18));
+}
+
 export function playBomboclaat() {
   const audio = load('bomboclaat');
   if (audio) tryPlay(audio.cloneNode(), () => fallbackBeep(110, 0.5));

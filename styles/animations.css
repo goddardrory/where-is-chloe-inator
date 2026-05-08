@@ -10,20 +10,8 @@
   left: var(--x, 50%);
 }
 
-/* === Rogue duck waddle === */
-@keyframes waddle-across {
-  0%   { left: -60px; transform: translateY(0) rotate(-2deg); }
-  10%  { transform: translateY(-4px) rotate(2deg); }
-  20%  { transform: translateY(0) rotate(-2deg); }
-  30%  { transform: translateY(-4px) rotate(2deg); }
-  40%  { transform: translateY(0) rotate(-2deg); }
-  50%  { transform: translateY(-4px) rotate(2deg); }
-  60%  { transform: translateY(0) rotate(-2deg); }
-  70%  { transform: translateY(-4px) rotate(2deg); }
-  80%  { transform: translateY(0) rotate(-2deg); }
-  90%  { transform: translateY(-4px) rotate(2deg); }
-  100% { left: 110vw; transform: translateY(0) rotate(-2deg); }
-}
+/* Rogue goose movement is now JS-driven (see easter-eggs.js initRogueDuck).
+   The legacy waddle-across keyframe is deliberately removed. */
 
 /* === Active flight card subtle pulse === */
 @keyframes card-pulse {

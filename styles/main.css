@@ -881,26 +881,44 @@ input, textarea, button {
   letter-spacing: 1px;
 }
 
-/* === ROGUE DUCK === */
+/* === ROGUE GOOSE === */
 .rogue-duck {
   position: fixed;
   bottom: 8px;
-  left: -60px;
-  font-size: 36px;
+  left: -200px;
+  font-size: 52px;
   z-index: 40;
   cursor: pointer;
   user-select: none;
   pointer-events: auto;
-  transition: transform 0.2s;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.2));
 }
 
-.rogue-duck.waddling {
-  animation: waddle-across 14s linear forwards;
+/* Three-toed muddy footprint via single-element box-shadow trick */
+.goose-footprint {
+  position: fixed;
+  width: 7px;
+  height: 5px;
+  background: #5a3a1f;
+  border-radius: 50%;
+  box-shadow:
+    -7px -3px 0 -1px #5a3a1f,
+     7px -3px 0 -1px #5a3a1f;
+  opacity: 0.55;
+  transform: rotate(0deg);
+  transition: opacity 4.5s linear;
+  pointer-events: none;
+  z-index: 38;
 }
 
-.rogue-duck:hover { transform: scale(1.15); }
-.rogue-duck:active { transform: scale(0.9); }
+.goose-gift {
+  position: fixed;
+  font-size: 26px;
+  z-index: 38;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.25));
+  transition: opacity 6s linear;
+}
 
 /* === RESETTI SCOLD OVERLAY === */
 .resetti-overlay {

@@ -1,4 +1,4 @@
-import { playPerry, playPerryTheme, playQuack, playBomboclaat, playExplosion, playCreeperHiss, playDoofJingle } from './audio.js';
+import { playPerry, playPerryTheme, playQuack, playQuackVarying, playBomboclaat, playExplosion, playCreeperHiss, playDoofJingle } from './audio.js';
 import { showToast } from './toast.js';
 import { silence as silenceBgMusic } from './bg-music.js';
 import { recordBomb } from './resetti-scold.js';
@@ -27,10 +27,33 @@ export function initEasterEggs() {
   initRogueDuck();
   initLeaves();
 
-  // Show the Doof overlay on page load so visitors see it without having to
-  // discover the typing triggers. The same dismissal logic applies.
-  initialDoofPromise = new Promise((resolve) => {
-    setTimeout(() => showDoof().then(resolve), 500);
+  // Defer the initial Doof overlay until the first user gesture. Until the
+  // user interacts, browser autoplay policy blocks audio, so the jingle
+  // would only fire on dismissal. Waiting for a gesture means the overlay
+  // and jingle appear together (with a 15s fallback so the page isn't
+  // permanently silent if a visitor just stares).
+  initialDoofPromise = waitForFirstGesture(15000).then(() => showDoof());
+}
+
+function waitForFirstGesture(timeoutMs) {
+  return new Promise((resolve) => {
+    let done = false;
+    const fire = () => {
+      if (done) return;
+      done = true;
+      cleanup();
+      resolve();
+    };
+    const cleanup = () => {
+      document.removeEventListener('pointerdown', fire, true);
+      document.removeEventListener('keydown',     fire, true);
+      document.removeEventListener('touchstart',  fire, true);
+      clearTimeout(timer);
+    };
+    document.addEventListener('pointerdown', fire, { capture: true, once: true });
+    document.addEventListener('keydown',     fire, { capture: true, once: true });
+    document.addEventListener('touchstart',  fire, { capture: true, once: true });
+    const timer = setTimeout(fire, timeoutMs);
   });
 }
 
@@ -221,26 +244,173 @@ function detonate() {
   }, 2400);
 }
 
-// === Rogue duck waddle ===
+// === Rogue goose: wandering Desktop-Goose-style critter ===
+//
+// JS-driven random pathing. Each visit cycle the goose enters from a side,
+// walks to N random destinations, leaves footprints + gift drops + honks
+// along the way, then exits. Click for a panicked quack.
+//
+// Visual is the duck emoji by default. If assets/img/goose.png exists, the
+// element swaps to use it.
+
+const GOOSE_GIFTS = ['🥨', '🍃', '🍂', '🥚', '📰', '🌽', '🍞', '🦝', '🥜', '🌽'];
+
 function initRogueDuck() {
-  const duck = document.getElementById('rogue-duck');
-  if (!duck) return;
+  const goose = document.getElementById('rogue-duck');
+  if (!goose) return;
 
-  // Click-quack stays so kids can spam it.
-  duck.addEventListener('click', () => playQuack());
+  // Try to swap the emoji for a goose image if the user has one
+  swapToImageIfPresent(goose, 'assets/img/goose.png');
 
-  // First waddle 30s after load, then every 3-4 minutes. Each appearance
-  // announces itself with a cute quack.
-  const start = () => {
-    duck.classList.remove('waddling');
-    // force reflow so the animation restarts cleanly
-    void duck.offsetWidth;
-    duck.classList.add('waddling');
-    playQuack();
-    const next = 180000 + Math.random() * 60000;
-    setTimeout(start, next);
+  // Position absolutely — leave the existing CSS in place but JS will override
+  goose.style.position = 'fixed';
+  goose.style.zIndex = '40';
+  goose.style.left = '-200px';
+  goose.style.top = '90vh';
+  goose.style.fontSize = '52px';
+  goose.style.cursor = 'pointer';
+  goose.style.userSelect = 'none';
+  goose.style.transformOrigin = 'center';
+  goose.classList.remove('waddling'); // disable the legacy CSS animation
+
+  goose.addEventListener('click', () => {
+    playQuackVarying(0.7, 1.6);
+    goose.style.transition = 'transform 0.15s ease';
+    goose.style.transform = `${currentDirTransform(goose)} scale(1.25)`;
+    setTimeout(() => {
+      goose.style.transform = currentDirTransform(goose);
+    }, 180);
+  });
+
+  // Reduced motion: skip the wandering; one waddle, no gifts, no footprints
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduced) return;
+
+  setTimeout(() => beginGooseVisit(goose), 25_000);
+}
+
+function currentDirTransform(el) {
+  return el.dataset.facing === 'left' ? 'scaleX(-1)' : 'scaleX(1)';
+}
+
+function setDir(el, isRight) {
+  el.dataset.facing = isRight ? 'right' : 'left';
+  el.style.transform = isRight ? 'scaleX(1)' : 'scaleX(-1)';
+}
+
+async function beginGooseVisit(goose) {
+  // Enter from a random side, vertical somewhere in the lower 70% of viewport
+  const enterRight = Math.random() < 0.5;
+  const startX = enterRight ? -180 : window.innerWidth + 60;
+  const startY = window.innerHeight * (0.35 + Math.random() * 0.55);
+  goose.style.transition = 'none';
+  goose.style.left = `${startX}px`;
+  goose.style.top  = `${startY}px`;
+  setDir(goose, enterRight);
+
+  // Visit 3–5 random points
+  const stops = 3 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < stops; i++) {
+    await walkGooseTo(goose, randomTargetInViewport());
+    await pauseAndAct(goose);
+  }
+
+  // Exit by walking offscreen on a random side
+  const exitX = Math.random() < 0.5 ? -200 : window.innerWidth + 60;
+  await walkGooseTo(goose, { x: exitX, y: goose.offsetTop });
+
+  // Schedule the next visit
+  const next = 60_000 + Math.random() * 90_000; // 60–150s
+  setTimeout(() => beginGooseVisit(goose), next);
+}
+
+function randomTargetInViewport() {
+  // Stay clear of the very top + very bottom so the goose doesn't sit in the trivia
+  // ticker / hero portrait
+  return {
+    x: 60 + Math.random() * (window.innerWidth - 180),
+    y: window.innerHeight * (0.35 + Math.random() * 0.55),
   };
-  setTimeout(start, 25000);
+}
+
+function walkGooseTo(goose, target) {
+  return new Promise((resolve) => {
+    const fromX = goose.offsetLeft;
+    const fromY = goose.offsetTop;
+    const dx = target.x - fromX;
+    const dy = target.y - fromY;
+    const distance = Math.hypot(dx, dy);
+    const speedPxPerSec = 110 + Math.random() * 40; // 110–150 px/s waddle
+    const durationMs = Math.max(700, (distance / speedPxPerSec) * 1000);
+
+    setDir(goose, dx > 0);
+    goose.style.transition = `left ${durationMs}ms linear, top ${durationMs}ms linear`;
+    goose.style.left = `${target.x}px`;
+    goose.style.top  = `${target.y}px`;
+
+    // Footprint trail — drops at the goose's current position every ~280ms
+    const footTimer = setInterval(() => dropFootprint(goose), 280);
+    setTimeout(() => {
+      clearInterval(footTimer);
+      resolve();
+    }, durationMs);
+  });
+}
+
+function pauseAndAct(goose) {
+  return new Promise((resolve) => {
+    const r = Math.random();
+    if (r < 0.40) {
+      dropGift(goose);
+      setTimeout(resolve, 700);
+    } else if (r < 0.75) {
+      playQuackVarying(0.85, 1.25);
+      setTimeout(resolve, 500);
+    } else {
+      // Just stand and stare
+      setTimeout(resolve, 800);
+    }
+  });
+}
+
+function dropFootprint(goose) {
+  const print = document.createElement('div');
+  print.className = 'goose-footprint';
+  // Position roughly at the goose's feet
+  print.style.left = `${goose.offsetLeft + (goose.offsetWidth || 52) / 2 - 10}px`;
+  print.style.top  = `${goose.offsetTop  + (goose.offsetHeight || 52) - 8}px`;
+  document.body.appendChild(print);
+  // Trigger fade after a tick so the initial state is rendered
+  requestAnimationFrame(() => { print.style.opacity = '0'; });
+  setTimeout(() => print.remove(), 4500);
+}
+
+function dropGift(goose) {
+  const gift = document.createElement('div');
+  gift.className = 'goose-gift';
+  gift.textContent = GOOSE_GIFTS[Math.floor(Math.random() * GOOSE_GIFTS.length)];
+  gift.style.left = `${goose.offsetLeft + (goose.offsetWidth || 52) / 2 - 14}px`;
+  gift.style.top  = `${goose.offsetTop  + (goose.offsetHeight || 52) - 18}px`;
+  document.body.appendChild(gift);
+  setTimeout(() => { gift.style.opacity = '0'; }, 6000);
+  setTimeout(() => gift.remove(), 12000);
+}
+
+// Replace the goose element's contents with an <img> if the file is present.
+// Falls back silently to whatever it already shows (the duck emoji).
+function swapToImageIfPresent(el, src) {
+  const img = new Image();
+  img.onload = () => {
+    el.replaceChildren();
+    img.style.height = '60px';
+    img.style.width = 'auto';
+    img.style.display = 'block';
+    img.style.pointerEvents = 'none';
+    el.appendChild(img);
+    el.style.fontSize = '0';
+  };
+  img.onerror = () => { /* keep emoji */ };
+  img.src = src;
 }
 
 // === Falling leaves ===
