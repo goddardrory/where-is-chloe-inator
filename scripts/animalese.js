@@ -1,35 +1,106 @@
 // Type text into an element character-by-character, like Animal Crossing
-// dialogue. Plays an Animalese blip per letter for the AC vibe.
+// dialogue, with synced Animalese audio.
+//
+// Primary path: Acedio's animalese.js library (loaded as a global before this
+// module). It pre-bakes a 26-letter sample library and synthesises a full WAV
+// for the whole quote — we play that and time the typewriter to match.
+//
+// Fallback: per-character synth blip via Web Audio.
 
 import { playNookAnimaleseChar } from './audio.js';
 
-const DEFAULT_SPEED_MS = 36; // ms per character; AC sits around 30-45ms
+// Acedio lib output is a fixed 0.075s per character regardless of pitch.
+const ACEDIO_MS_PER_CHAR = 75;
+// Tom Nook's deeper voice — pitch < 1.0 makes the source samples read more
+// slowly, giving a lower / gravellier tone.
+const NOOK_PITCH = 0.85;
+
+const SYNTH_SPEED_MS = 36;
+
+let acedio = null;
+let acedioReady = false;
+let acedioFailed = false;
 let activeTimer = null;
+let activeAudio = null;
 let activeTarget = null;
 
-// Cancel any in-progress animation. Used so a second invocation interrupts
-// cleanly rather than two typewriters racing on the same element.
+// Lazily initialise the Acedio engine. Cheap to call repeatedly.
+function ensureAcedio() {
+  if (acedioReady || acedioFailed) return;
+  if (typeof window === 'undefined' || typeof window.Animalese !== 'function') {
+    acedioFailed = true;
+    return;
+  }
+  try {
+    acedio = new window.Animalese('scripts/vendor/animalese/animalese.wav', () => {
+      acedioReady = true;
+    });
+  } catch {
+    acedioFailed = true;
+  }
+}
+
 export function cancelAnimalese() {
   if (activeTimer) {
     clearInterval(activeTimer);
     activeTimer = null;
-    activeTarget = null;
   }
+  if (activeAudio) {
+    try { activeAudio.pause(); activeAudio.currentTime = 0; } catch {}
+    activeAudio = null;
+  }
+  activeTarget = null;
 }
 
 export function typeAnimalese(el, text, opts = {}) {
   if (!el) return;
   cancelAnimalese();
-
-  const speed = opts.speed ?? DEFAULT_SPEED_MS;
-  el.textContent = '';
+  ensureAcedio();
   activeTarget = el;
+  el.textContent = '';
 
-  // Track of how many "letter ticks" we've played to throttle audio (every 2nd
-  // letter sounds closer to AC's actual cadence and is less fatiguing).
+  if (acedioReady && acedio) {
+    typeWithAcedio(el, text, opts);
+  } else {
+    typeWithSynth(el, text, opts);
+  }
+}
+
+// === Acedio path: one big audio file, typewriter timed to its cadence ===
+function typeWithAcedio(el, text, opts) {
+  const pitch = opts.pitch ?? NOOK_PITCH;
+
+  let wave;
+  try {
+    wave = acedio.Animalese(text, false, pitch);
+  } catch {
+    typeWithSynth(el, text, opts);
+    return;
+  }
+
+  if (wave && wave.dataURI) {
+    const audio = new Audio(wave.dataURI);
+    audio.volume = 0.5;
+    audio.play().catch(() => { /* autoplay blocked — typewriter still runs */ });
+    activeAudio = audio;
+  }
+
+  let i = 0;
+  activeTimer = setInterval(() => {
+    if (i >= text.length || el !== activeTarget) {
+      cancelAnimalese();
+      return;
+    }
+    i += 1;
+    el.textContent = text.slice(0, i);
+  }, ACEDIO_MS_PER_CHAR);
+}
+
+// === Synth fallback: per-character blip while typing ===
+function typeWithSynth(el, text, opts) {
+  const speed = opts.speed ?? SYNTH_SPEED_MS;
   let letterTicks = 0;
   let i = 0;
-
   activeTimer = setInterval(() => {
     if (i >= text.length || el !== activeTarget) {
       cancelAnimalese();

@@ -99,6 +99,16 @@ it end-to-end.
 - Type **`doof`** anywhere on the page → Where-is-Chloe-inator overlay
 - **Konami code** (↑ ↑ ↓ ↓ ← → ← → b a) → Perry fedora cursor + theme song
 
+## Third-party credits
+
+- **Animalese** speech synthesis: [animalese.js](https://github.com/Acedio/animalese.js)
+  by Josh Simmons (Acedio). Code is MIT-licensed; the `animalese.wav` audio
+  sample is licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+  Vendor copy lives at `scripts/vendor/animalese/`. This project is not
+  affiliated with Nintendo Co., Ltd. Animal Crossing is © Nintendo.
+- **Tom Nook character render**: from the [Nookipedia](https://nookipedia.com/wiki/Tom_Nook)
+  wiki for visual reference (fan-curated AC reference site).
+
 ## File layout
 
 ```
