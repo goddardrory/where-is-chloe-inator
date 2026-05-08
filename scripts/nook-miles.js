@@ -1,15 +1,18 @@
 // Persistent Nook Miles bonus tracker + achievement registry.
 //
 // The hero "Nook Miles" counter shows a base value derived from flight progress
-// (300 per landed leg + 500 arrival bonus) plus the bonus tracked here. Bonus
-// miles are awarded for interactive moments — goose pets, messages posted,
-// easter eggs found, etc. — and SUBTRACTED for detonating the site (humour).
+// plus a SHARED bonus tracked across the family on the server (Netlify Blobs).
+// Each interaction posts its delta to /.netlify/functions/miles which atomically
+// adds it to the running total and returns the new value. localStorage holds
+// the latest known shared total so the chip can display instantly while a
+// background sync keeps it fresh from the server every 60s.
 //
 // On every change a `miles-change` event is dispatched on `document` with
 // detail = { delta, reason, total } so the hero counter can refresh + flash.
 
 const MILES_KEY = 'whereischloe.bonusMiles';
 const ACH_KEY   = 'whereischloe.achievements';
+const SYNC_URL  = '/.netlify/functions/miles';
 
 export function getBonusMiles() {
   try {
@@ -18,13 +21,59 @@ export function getBonusMiles() {
   } catch { return 0; }
 }
 
-export function addMiles(delta, reason = '') {
-  const next = getBonusMiles() + delta;
-  try { localStorage.setItem(MILES_KEY, String(next)); } catch {}
+function setLocalMiles(total) {
+  try { localStorage.setItem(MILES_KEY, String(total)); } catch {}
+}
+
+function emitMilesChange(delta, reason, total) {
   document.dispatchEvent(new CustomEvent('miles-change', {
-    detail: { delta, reason, total: next },
+    detail: { delta, reason, total },
   }));
-  return next;
+}
+
+export function addMiles(delta, reason = '') {
+  // Optimistic local update so the chip feels instant.
+  const localNext = getBonusMiles() + delta;
+  setLocalMiles(localNext);
+  emitMilesChange(delta, reason, localNext);
+
+  // Push the delta to the shared family total. The server response is the
+  // authoritative running count — mirror it back so we converge with other
+  // devices.
+  fetch(SYNC_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ delta, reason }),
+  })
+    .then((r) => (r && r.ok ? r.json() : null))
+    .then((data) => {
+      if (data && Number.isFinite(data.total)) {
+        setLocalMiles(data.total);
+        // Only flash if the server total drifted from our optimistic guess.
+        if (data.total !== localNext) {
+          emitMilesChange(0, 'sync', data.total);
+        }
+      }
+    })
+    .catch(() => { /* offline; pick up on next sync */ });
+
+  return localNext;
+}
+
+// Pull the shared total from the server and mirror it locally. Called on
+// init and every 60s in main.js so family members converge on the same
+// running count even if multiple devices add at once.
+export async function syncBonusMiles() {
+  try {
+    const res = await fetch(SYNC_URL, { headers: { Accept: 'application/json' } });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (Number.isFinite(data.total)) {
+      const before = getBonusMiles();
+      setLocalMiles(data.total);
+      if (data.total !== before) emitMilesChange(0, 'sync', data.total);
+    }
+  } catch { /* offline */ }
 }
 
 // One-shot achievements: id, label (toast title), miles (reward).

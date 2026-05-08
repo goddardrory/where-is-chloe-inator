@@ -4,13 +4,13 @@ import { narrate, randomNookQuote, randomNookTwssBait } from './nook-narrator.js
 import { typeAnimalese, cancelAnimalese, preloadAcedio, whenAcedioReady } from './animalese.js';
 import { start as startBgMusic, crossFadeTo as bgCrossFade, mute as muteBg, unmute as unmuteBg } from './bg-music.js';
 import { isOwed as isResettiOwed, showScold as showResettiScold } from './resetti-scold.js';
-import { getBonusMiles, addMiles, awardAchievement } from './nook-miles.js';
+import { getBonusMiles, addMiles, awardAchievement, syncBonusMiles } from './nook-miles.js';
 import { formatCountdown } from './countdown.js';
 import { initEasterEggs, spawnConfetti, whenInitialDoofClosed, spawnFlyBy } from './easter-eggs.js';
 import { initMessages } from './messages.js';
 import { initTrivia } from './trivia.js';
 import { showToast } from './toast.js';
-import { playPerry, playPerryTheme, playTwss } from './audio.js';
+import { playPerry, playPerryTheme, playTwss, warmUpAudio } from './audio.js';
 
 const TICK_MS = 1000; // 1s tick keeps countdown smooth; cheap.
 const TYPE_MS_PER_CHAR    = 75;   // matches Acedio cadence in animalese.js
@@ -135,6 +135,12 @@ async function init() {
   setInterval(tick, TICK_MS);
   startAirlineAnnouncements();
   initInteractiveMiles();
+
+  // Pull the shared family Nook Miles total from the server so every device
+  // converges on the same count. Refresh every 60s so adds from other family
+  // members show up.
+  syncBonusMiles();
+  setInterval(syncBonusMiles, 60_000);
 
   // Wait for the Doof overlay to dismiss AND for Acedio to be loaded before
   // we start typing Tom Nook quotes — otherwise the first quote uses the
@@ -508,6 +514,11 @@ function showSplash() {
 
     const finish = (name) => {
       try { if (name) localStorage.setItem(NAME_KEY, name); } catch {}
+      // First user gesture — unlock all SFX audio elements so iOS lets
+      // them play later from setTimeout-driven triggers (TWSS follow-up,
+      // Doof jingle, Dwight, etc.). Without this iOS only allows the
+      // very first Audio() instance to play and then silently blocks.
+      warmUpAudio();
       splash.classList.remove('is-open');
       resolve();
     };

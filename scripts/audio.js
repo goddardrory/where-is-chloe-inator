@@ -26,7 +26,9 @@ function load(key) {
   if (cache[key]) return cache[key];
   try {
     const audio = new Audio(SOURCES[key]);
-    audio.preload = 'none';
+    // 'auto' so iOS can buffer ahead — 'none' meant playback was blocked
+    // until the file loaded, which compounded the unlock issue.
+    audio.preload = 'auto';
     cache[key] = audio;
     return audio;
   } catch {
@@ -34,40 +36,72 @@ function load(key) {
   }
 }
 
+// iOS Safari / Brave-iOS unlock: each NEW Audio() instance needs its own
+// gesture to unlock. Cloning per call broke playback after the first tap.
+// Every play* function now reuses the cached instance directly so the
+// unlock survives. Trade-off: rapid concurrent plays of the SAME sound
+// restart instead of overlap, which is fine for short SFX.
 export function playPerry() {
   const audio = load('perryyy');
-  if (audio) tryPlay(audio.cloneNode(), () => fallbackBeep(880, 0.12));
+  if (audio) tryPlay(audio, () => fallbackBeep(880, 0.12));
   else fallbackBeep(880, 0.12);
 }
 
 export function playPerryTheme() {
   const audio = load('perryTheme');
-  if (audio) tryPlay(audio.cloneNode(), fallbackMelody);
+  if (audio) tryPlay(audio, fallbackMelody);
   else fallbackMelody();
 }
 
 export function playQuack() {
   const audio = load('quack');
-  if (audio) tryPlay(audio.cloneNode(), () => fallbackBeep(220, 0.18));
-  else fallbackBeep(220, 0.18);
+  if (audio) {
+    audio.playbackRate = 1;
+    tryPlay(audio, () => fallbackBeep(220, 0.18));
+  } else fallbackBeep(220, 0.18);
 }
 
-// Variable-pitch quack via playbackRate — the goose has a range
 export function playQuackVarying(min = 0.75, max = 1.4) {
   const audio = load('quack');
   if (!audio) {
     fallbackBeep(180 + Math.random() * 120, 0.18);
     return;
   }
-  const inst = audio.cloneNode();
-  inst.playbackRate = min + Math.random() * (max - min);
-  tryPlay(inst, () => fallbackBeep(180 + Math.random() * 120, 0.18));
+  audio.playbackRate = min + Math.random() * (max - min);
+  tryPlay(audio, () => fallbackBeep(180 + Math.random() * 120, 0.18));
 }
 
 export function playBomboclaat() {
   const audio = load('bomboclaat');
-  if (audio) tryPlay(audio.cloneNode(), () => fallbackBeep(110, 0.5));
+  if (audio) tryPlay(audio, () => fallbackBeep(110, 0.5));
   else fallbackBeep(110, 0.5);
+}
+
+// === iOS audio unlock primer ===
+// Call this from inside a confirmed user-gesture handler (e.g., the splash
+// dismissal). It triggers a silent play() on every cached audio element so
+// each one is "unlocked" by the gesture. After this, future timer-driven
+// plays succeed on iOS without needing another tap. Heavy tracks
+// (kk-airline) are skipped — the bg-music module handles those itself.
+let warmedUpAudio = false;
+const WARMUP_SKIP = new Set(['kkAirline']);
+export function warmUpAudio() {
+  if (warmedUpAudio) return;
+  warmedUpAudio = true;
+  for (const key of Object.keys(SOURCES)) {
+    if (WARMUP_SKIP.has(key)) continue;
+    const audio = load(key);
+    if (!audio) continue;
+    const wasMuted = audio.muted;
+    audio.muted = true;
+    const p = audio.play();
+    if (p && p.then) {
+      p.then(() => {
+        try { audio.pause(); audio.currentTime = 0; } catch {}
+        audio.muted = wasMuted;
+      }).catch(() => { audio.muted = wasMuted; });
+    }
+  }
 }
 
 // === Animalese: short pitched blip per character, à la AC dialogue ===
@@ -107,8 +141,7 @@ export function playNookAnimaleseChar(char) {
 // === Mi bombo: drum-roll-style anticipation cue ===
 export function playMiBombo() {
   const audio = load('miBombo');
-  if (audio) { tryPlay(audio.cloneNode()); return; }
-  // Synthesized fallback: 8 fast drum hits ramping up
+  if (audio) { tryPlay(audio); return; }
   duckFor(8 * 180 + 100);
   for (let i = 0; i < 8; i++) {
     setTimeout(() => fallbackBeep(60 + i * 8, 0.07), i * 180);
@@ -119,18 +152,16 @@ export function playMiBombo() {
 export function playCreeperHiss() {
   const audio = load('creeperHiss');
   if (audio) {
-    const inst = audio.cloneNode();
-    tryPlay(inst);
-    return inst;
+    tryPlay(audio);
+    return audio;
   }
-  // Synth fallback: rising hiss via white-noise band
   const c = ac(); if (!c) return null;
   duckFor(2500);
   const len = Math.floor(c.sampleRate * 2.8);
   const buf = c.createBuffer(1, len, c.sampleRate);
   const data = buf.getChannelData(0);
   for (let i = 0; i < len; i++) {
-    const ramp = i / len; // gain ramps up over the duration
+    const ramp = i / len;
     data[i] = (Math.random() * 2 - 1) * 0.25 * ramp;
   }
   const noise = c.createBufferSource();
@@ -144,23 +175,22 @@ export function playCreeperHiss() {
 export function playLizardKing() {
   const audio = load('lizardKing');
   if (!audio) { fallbackBeep(220, 0.5); return null; }
-  const inst = audio.cloneNode();
-  tryPlay(inst);
-  return inst;
+  tryPlay(audio);
+  return audio;
 }
 
 // === Dwight, you ignorant slut: typing trigger cue ===
 export function playDwightSlut() {
   const audio = load('dwightSlut');
   if (!audio) { fallbackBeep(440, 0.3); return; }
-  tryPlay(audio.cloneNode(), () => fallbackBeep(440, 0.3));
+  tryPlay(audio, () => fallbackBeep(440, 0.3));
 }
 
 // === That's what she said: typing trigger + Nook-announcement follow-up ===
 export function playTwss() {
   const audio = load('twss');
   if (!audio) { fallbackBeep(380, 0.4); return; }
-  tryPlay(audio.cloneNode(), () => fallbackBeep(380, 0.4));
+  tryPlay(audio, () => fallbackBeep(380, 0.4));
 }
 
 // === Doof jingle: plays when the Doof overlay opens ===
@@ -175,8 +205,7 @@ export function playDoofJingle() {
   if (!audio) { fallbackMelody(); return; }
 
   const playOnce = () => {
-    const inst = audio.cloneNode();
-    tryPlay(inst, () => {
+    tryPlay(audio, () => {
       if (doofJingleQueued) return;
       doofJingleQueued = true;
       const onGesture = () => {
@@ -196,7 +225,7 @@ export function playDoofJingle() {
 // === Explosion: white-noise burst ===
 export function playExplosion() {
   const audio = load('explosion');
-  if (audio) { tryPlay(audio.cloneNode()); return; }
+  if (audio) { tryPlay(audio); return; }
   const c = ac(); if (!c) return;
   duckFor(1500);
   const len = Math.floor(c.sampleRate * 1.4);
@@ -233,12 +262,36 @@ export function stopKK() {
 }
 
 function tryPlay(audio, onFail) {
+  // If a previous tryPlay is still tracking this audio (i.e. we're calling
+  // again before the last one ended), release its duck count + listeners
+  // first so a rapid replay doesn't leak.
+  if (audio._releaseFn) audio._releaseFn();
+
   duck();
   let released = false;
-  const release = () => { if (!released) { released = true; unduck(); } };
-  audio.addEventListener('ended', release, { once: true });
-  audio.addEventListener('error', () => { release(); if (onFail) onFail(); }, { once: true });
-  audio.addEventListener('pause', release, { once: true });
+
+  const onEnded = () => release();
+  const onError = () => { release(); if (onFail) onFail(); };
+  const onPause = () => release();
+
+  const release = () => {
+    if (released) return;
+    released = true;
+    audio.removeEventListener('ended', onEnded);
+    audio.removeEventListener('error', onError);
+    audio.removeEventListener('pause', onPause);
+    if (audio._releaseFn === release) audio._releaseFn = null;
+    unduck();
+  };
+  audio._releaseFn = release;
+
+  audio.addEventListener('ended', onEnded);
+  audio.addEventListener('error', onError);
+  audio.addEventListener('pause', onPause);
+
+  // Reset to start so a replay restarts cleanly even if mid-playback.
+  try { audio.currentTime = 0; } catch {}
+
   const p = audio.play();
   if (p && typeof p.catch === 'function') {
     p.catch(() => { release(); if (onFail) onFail(); });
