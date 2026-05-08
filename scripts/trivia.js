@@ -83,6 +83,12 @@ const VILLAGERS = [
   'Celeste: "Look up, traveler — even from 39,000 feet the constellations are the same."',
   'Daisy Mae: "Daisy Mae here! Turnip prices are spiking — too bad you\'re mid-flight!"',
   'Resetti: "Don\'t let me catch you closing this tab! …kidding. I\'m on holiday."',
+  'Resetti: "LISTEN UP, KID! If you refresh this page mid-flight, so help me—"',
+  'Resetti: "What did I say about closing browser tabs!? You did it anyway, didn\'t ya?!"',
+  'Resetti: "Mr. Resetti, at your service. RELUCTANTLY."',
+  'Resetti: "I see you typing \'doof\'. Knock it off! …actually keep going, that one\'s funny."',
+  'Resetti: "If this flight loops back to Seattle I\'m holdin\' YOU personally responsible!"',
+  'Resetti: "Cold up there at 39,000 feet? Underground digs are a steady 18°C, just sayin\'."',
   'Gulliver: "Ack… please tell me which leg of the journey we\'re on, friend."',
   'CJ: "Fishing tournament back home! …But honestly, watching this trip is more fun."',
 ];
