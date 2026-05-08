@@ -9,6 +9,9 @@
   .hero-portrait img { width: 100px; height: 100px; }
   .hero-portrait { top: 20px; right: 24px; }
   .hero-eyebrow, .hero-title, .nook-row { padding-right: 180px; }
+  /* Wider screens have room — bubble sits beside the portrait again, no
+     forced top-margin. Reset the mobile push-down. */
+  .nook-row { margin-top: 0; }
 
   .map-frame { height: 440px; }
 

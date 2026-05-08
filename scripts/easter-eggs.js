@@ -297,7 +297,7 @@ let cinematicActive = false;
 
 const LIZARD_DURATION_MS = 14500; // matches lizard-king.mp3 length
 const LIZARD_HOLD_MS     = 3000;  // hold the zoom for the last 3s of audio
-const LIZARD_CHANCE      = 0.20;  // 1 in 5 goose clicks
+const LIZARD_CHANCE      = 0.25;  // 1 in 4 goose clicks
 
 function setSprite(goose, key) {
   const img = goose.querySelector('img');

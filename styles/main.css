@@ -146,12 +146,16 @@ input, textarea, button {
   white-space: nowrap;
 }
 
-/* Push hero text away from the portrait + "TODAY'S TRAVELER" tag (the tag
-   is wider than the portrait, so the padding has to clear the wider element). */
+/* Eyebrow + title sit beside the portrait/tag, so they need padding-right
+   to clear the wider tag. The bubble is too useful to squeeze into a thin
+   column though — on narrow screens we drop it BELOW the portrait/tag
+   block instead, giving it the full width to wrap into. */
 .hero-eyebrow,
-.hero-title,
-.nook-row {
+.hero-title {
   padding-right: 150px;
+}
+.nook-row {
+  margin-top: 56px; /* push down so the bubble clears the portrait + tag */
 }
 
 .hero-eyebrow {
