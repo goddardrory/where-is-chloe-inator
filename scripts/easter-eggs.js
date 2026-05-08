@@ -428,16 +428,17 @@ function lizardKingSequence(goose) {
   goose.style.transition = `transform ${zoomMs}ms ease-in-out`;
   goose.style.transform = 'scaleX(1) scale(6)';
 
-  // Phase 2 — hard cut to ridiculous face zoom.
-  // transform-origin '50% 30%' picks the goose's face area on the sprite.
-  // translate-y compensates so that point ends up at viewport centre.
-  // Scale 30 makes the face fill most of the screen.
+  // Phase 2 — hard cut to face zoom.
+  // The face on the still sprite sits around 38% from the top (head/hat
+  // occupies the upper third; eyes/beak are mid-head). Origin at the face,
+  // translate compensates to put the face pivot at viewport centre, scale
+  // 20 makes the face dominate the screen without overshooting.
   setTimeout(() => {
     if (!cinematicActive) return;
     goose.style.transition = 'none';
-    goose.style.transformOrigin = '50% 30%';
-    const faceTranslateY = elemH * 0.20; // (50% − 30%) of element height
-    goose.style.transform = `translate(0px, ${faceTranslateY}px) scaleX(1) scale(30)`;
+    goose.style.transformOrigin = '50% 38%';
+    const faceTranslateY = elemH * 0.12; // (50% − 38%) of element height
+    goose.style.transform = `translate(0px, ${faceTranslateY}px) scaleX(1) scale(20)`;
   }, zoomMs);
 
   // Phase 4 — fade back at total duration
