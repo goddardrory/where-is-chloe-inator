@@ -1,0 +1,9 @@
+{
+  "name": "where-is-chloe",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Family tracker for Chloe's flight from Seattle to Durban",
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  }
+}
