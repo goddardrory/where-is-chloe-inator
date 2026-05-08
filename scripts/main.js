@@ -1,6 +1,6 @@
 import { FLIGHTS } from '../data/flights.js';
 import { computeState, computeJourneyProgress, computeMilesEarned } from './flight-state.js';
-import { narrate, randomNookQuote } from './nook-narrator.js';
+import { narrate, randomNookQuote, randomNookTwssBait } from './nook-narrator.js';
 import { typeAnimalese, cancelAnimalese, preloadAcedio, whenAcedioReady } from './animalese.js';
 import { start as startBgMusic, crossFadeTo as bgCrossFade, mute as muteBg, unmute as unmuteBg } from './bg-music.js';
 import { isOwed as isResettiOwed, showScold as showResettiScold } from './resetti-scold.js';
@@ -98,9 +98,23 @@ async function init() {
     narratorMode = narratorMode === 'state' ? 'quote' : 'state';
     cancelAnimalese();
     if (narratorMode === 'quote') {
-      currentQuote = randomNookQuote();
+      // 25% of quotes pull from the TWSS-bait pool. When that fires, queue
+      // Michael's "That's what she said" right after Animalese finishes.
+      const useTwssBait = Math.random() < 0.25;
+      currentQuote = useTwssBait ? randomNookTwssBait() : randomNookQuote();
       const bubble = document.getElementById('nook-bubble');
-      if (bubble) typeAnimalese(bubble, currentQuote);
+      if (bubble) {
+        typeAnimalese(bubble, currentQuote);
+        if (useTwssBait) {
+          // Animalese types at ~75ms per char; tack on a small beat for
+          // Nook to land the line before Michael punches the punchline.
+          const animMs = currentQuote.length * 75 + 350;
+          setTimeout(() => {
+            playTwss();
+            showToast('👔 Michael: "That\'s what she said!"', '', 3500);
+          }, animMs);
+        }
+      }
     } else {
       // Force the next tick to re-pick & re-animalese a fresh state line.
       lastStateKey = null;
@@ -197,18 +211,29 @@ function startAirlineAnnouncements() {
   const fire = () => {
     const state = computeState(new Date());
     if (state.phase === 'in-flight') {
-      const lines = [
-        `Hooo! Currently cruising over ${state.region}, yes yes!`,
-        `Tom Nook says: "Cabin pressure stable. Loan repayment also stable, hooo."`,
-        `Yes yes, ${Math.round(state.progress * 100)}% across ${state.flight.dep.city}→${state.flight.arr.city}, hm-hmm.`,
-        `Above ${state.region}. The Bells are rolling in, yes yes! …to me, mostly.`,
-        `Pretzel update: served, probably stale, charged extra. Stanley would weep, hm-hmm.`,
-        `Hooo! Captain reports tailwinds AND favourable financing terms. Both rare!`,
-        `Yes yes, do enjoy the in-flight catalogue. Page 47 has the loan schedule, hooo.`,
-      ];
-      showToast(`🦝 ${lines[Math.floor(Math.random() * lines.length)]}`, '', 6000);
-      // 18% chance Michael cannot help himself after Nook's loan-laden update
-      if (Math.random() < 0.18) {
+      // 30% chance Nook says a TWSS-bait line — those guarantee Michael
+      // chimes in. Otherwise pick a regular announcement; Michael has an
+      // 18% chance of following up on those.
+      const useTwssBait = Math.random() < 0.30;
+      let line;
+      if (useTwssBait) {
+        line = randomNookTwssBait();
+      } else {
+        const regular = [
+          `Hooo! Currently cruising over ${state.region}, yes yes!`,
+          `Tom Nook says: "Cabin pressure stable. Loan repayment also stable, hooo."`,
+          `Yes yes, ${Math.round(state.progress * 100)}% across ${state.flight.dep.city}→${state.flight.arr.city}, hm-hmm.`,
+          `Above ${state.region}. The Bells are rolling in, yes yes! …to me, mostly.`,
+          `Pretzel update: served, probably stale, charged extra. Stanley would weep, hm-hmm.`,
+          `Hooo! Captain reports tailwinds AND favourable financing terms. Both rare!`,
+          `Yes yes, do enjoy the in-flight catalogue. Page 47 has the loan schedule, hooo.`,
+        ];
+        line = regular[Math.floor(Math.random() * regular.length)];
+      }
+      showToast(`🦝 ${line}`, '', 6000);
+
+      const willFollow = useTwssBait || Math.random() < 0.18;
+      if (willFollow) {
         setTimeout(() => {
           playTwss();
           showToast('👔 Michael: "That\'s what she said!"', '', 3500);

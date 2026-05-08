@@ -38,6 +38,27 @@ export function randomNookQuote() {
   return NOOK_QUOTES[Math.floor(Math.random() * NOOK_QUOTES.length)];
 }
 
+// Lines Tom Nook can say that thematically fit the journey/loans but invite
+// Michael Scott's signature follow-up. Whenever one of these is selected,
+// the consumer is expected to fire Michael's "That's what she said" clip
+// once Nook finishes the line. Original fan-style content.
+export const NOOK_TWSS_BAIT = [
+  'Yes yes, this loan is much bigger than the last one, hooo!',
+  'Hooo! The runway is long, but I have handled longer, yes yes.',
+  'Hm-hmm, the in-flight catalogue is thick — very thick indeed, yes yes.',
+  'Yes yes, the cabin is a tight squeeze, but we will make it work, hooo!',
+  'Hooo! Compound interest grows faster than expected, hm-hmm.',
+  'Yes yes, I always go in firm with the loan terms, hm-hmm!',
+  'Hooo! Fully extended, the repayment period is most impressive, yes yes.',
+  'Hm-hmm, this loan is a real grower, yes yes.',
+  'Yes yes, hand me the long one, hooo. Yes — that loan there.',
+  'It will only take a moment, hooo. …usually.',
+];
+
+export function randomNookTwssBait() {
+  return NOOK_TWSS_BAIT[Math.floor(Math.random() * NOOK_TWSS_BAIT.length)];
+}
+
 // Map a state object (from flight-state.js) to:
 //   { hero: string, nookOptions: string[] }
 // The hero line is the big one-liner. nookOptions is a list of Tom Nook line
