@@ -226,24 +226,39 @@ function detonate() {
 
 // === Rogue goose: wandering Desktop-Goose-style critter ===
 //
-// JS-driven random pathing. Each visit cycle the goose enters from a side,
-// walks to N random destinations, leaves footprints + gift drops + honks
-// along the way, then exits. Click for a panicked quack.
-//
-// Visual is the duck emoji by default. If assets/img/goose.png exists, the
-// element swaps to use it.
+// JS-driven random pathing. Each visit: enter from a random side, walk to
+// N random destinations (using the walk-cycle GIF), strike a random pose at
+// each stop (look / sit-look / jump / idle), drop gifts, leave footprints,
+// then exit. Click anywhere on the goose → it flies away in a panic.
 
 const GOOSE_GIFTS = ['🥨', '🍃', '🍂', '🥚', '📰', '🌽', '🍞', '🦝', '🥜', '🌽'];
+
+const GOOSE_SPRITES = {
+  walk:    'assets/img/goose-walk.gif',
+  look:    'assets/img/goose-look.gif',
+  jump:    'assets/img/goose-jump.gif',
+  sitLook: 'assets/img/goose-sit-look.gif',
+  flyaway: 'assets/img/goose-flyaway.gif',
+  idle:    'assets/img/goose-idle.gif',
+};
+const PAUSE_POSES = ['look', 'sitLook', 'jump', 'idle'];
+
+let goosePanicking = false;
+
+function setSprite(goose, key) {
+  const img = goose.querySelector('img');
+  if (!img) return;
+  // Cache-bust so the GIF restarts from frame 0 each swap.
+  img.src = `${GOOSE_SPRITES[key]}?t=${Date.now()}`;
+}
 
 function initRogueDuck() {
   const goose = document.getElementById('rogue-duck');
   if (!goose) return;
 
-  // Default visual is the static still — keeps the head straight while
-  // walking. The animated GIF (with the head-turn animation) is swapped
-  // in periodically by scheduleHeadTurn so the head-turn becomes a rare
-  // tic instead of a constant motion.
-  swapToImageIfPresent(goose, ['assets/img/goose-still.png', 'assets/img/goose.gif', 'assets/img/goose.png']);
+  // Default visual is the walk-cycle GIF (legs animating). At each stop the
+  // sprite swaps to one of the pause poses; on click it swaps to flyaway.
+  swapToImageIfPresent(goose, [GOOSE_SPRITES.walk, 'assets/img/goose-still.png']);
 
   // Position absolutely — leave the existing CSS in place but JS will override
   goose.style.position = 'fixed';
@@ -257,12 +272,8 @@ function initRogueDuck() {
   goose.classList.remove('waddling'); // disable the legacy CSS animation
 
   goose.addEventListener('click', () => {
-    playQuackVarying(0.7, 1.6);
-    goose.style.transition = 'transform 0.15s ease';
-    goose.style.transform = `${currentDirTransform(goose)} scale(1.25)`;
-    setTimeout(() => {
-      goose.style.transform = currentDirTransform(goose);
-    }, 180);
+    if (goosePanicking) return;
+    panicAndExit(goose);
   });
 
   // Reduced motion: skip the wandering; one waddle, no gifts, no footprints
@@ -270,27 +281,32 @@ function initRogueDuck() {
   if (reduced) return;
 
   setTimeout(() => beginGooseVisit(goose), 25_000);
-  scheduleHeadTurn(goose);
 }
 
-// Briefly swap the still PNG for the animated GIF every 25-50s so the
-// head-turn becomes a rare tic (~1.5s) instead of constant motion.
-function scheduleHeadTurn(goose) {
-  const delay = 25_000 + Math.random() * 25_000;
+// Click → goose panics, swaps to flyaway sprite, sprints off-screen,
+// then waits longer than usual before the next visit.
+function panicAndExit(goose) {
+  goosePanicking = true;
+  playQuackVarying(0.6, 1.5);
+  setSprite(goose, 'flyaway');
+  // Make sure the goose is "facing" its exit direction
+  const exitsRight = (goose.offsetLeft + (goose.offsetWidth || 60) / 2) > window.innerWidth / 2;
+  setDir(goose, exitsRight);
+  // Fast translation off-screen
+  const exitX = exitsRight ? window.innerWidth + 240 : -240;
+  goose.style.transition = 'left 1.0s cubic-bezier(.5,.0,.7,.0), top 1.0s ease-in';
+  goose.style.left = `${exitX}px`;
+  goose.style.top  = `${goose.offsetTop - 80}px`; // small upward arc
+
   setTimeout(() => {
-    playHeadTurn(goose);
-    scheduleHeadTurn(goose);
-  }, delay);
-}
-
-function playHeadTurn(goose) {
-  const img = goose.querySelector('img');
-  if (!img) return; // emoji fallback in use; nothing to swap
-  // Cache-bust the GIF so it restarts from frame 0 each time
-  const gifSrc = `assets/img/goose.gif?t=${Date.now()}`;
-  const stillSrc = 'assets/img/goose-still.png';
-  img.src = gifSrc;
-  setTimeout(() => { img.src = stillSrc; }, 1500);
+    goose.style.transition = 'none';
+    goose.style.left = '-300px';
+    goose.style.top  = '-300px';
+    setSprite(goose, 'walk');
+    goosePanicking = false;
+    // Schedule the next visit after a longer cool-off period
+    setTimeout(() => beginGooseVisit(goose), 90_000 + Math.random() * 90_000);
+  }, 1100);
 }
 
 // Source sprite faces LEFT, so walking right requires a horizontal flip.
@@ -304,6 +320,8 @@ function setDir(el, isRight) {
 }
 
 async function beginGooseVisit(goose) {
+  if (goosePanicking) return;
+
   // Enter from a random side, vertical somewhere in the lower 70% of viewport
   const enterRight = Math.random() < 0.5;
   const startX = enterRight ? -180 : window.innerWidth + 60;
@@ -312,20 +330,25 @@ async function beginGooseVisit(goose) {
   goose.style.left = `${startX}px`;
   goose.style.top  = `${startY}px`;
   setDir(goose, enterRight);
+  setSprite(goose, 'walk');
 
-  // Visit 4–6 random points so the goose lingers longer
+  // Visit 4-6 random points so the goose lingers longer
   const stops = 4 + Math.floor(Math.random() * 3);
   for (let i = 0; i < stops; i++) {
+    if (goosePanicking) return;
     await walkGooseTo(goose, randomTargetInViewport());
+    if (goosePanicking) return;
     await pauseAndAct(goose);
   }
+
+  if (goosePanicking) return;
 
   // Exit by walking offscreen on a random side
   const exitX = Math.random() < 0.5 ? -200 : window.innerWidth + 60;
   await walkGooseTo(goose, { x: exitX, y: goose.offsetTop });
 
   // Schedule the next visit
-  const next = 60_000 + Math.random() * 90_000; // 60–150s
+  const next = 60_000 + Math.random() * 90_000; // 60-150s
   setTimeout(() => beginGooseVisit(goose), next);
 }
 
@@ -340,12 +363,14 @@ function randomTargetInViewport() {
 
 function walkGooseTo(goose, target) {
   return new Promise((resolve) => {
+    if (goosePanicking) { resolve(); return; }
+    setSprite(goose, 'walk');
     const fromX = goose.offsetLeft;
     const fromY = goose.offsetTop;
     const dx = target.x - fromX;
     const dy = target.y - fromY;
     const distance = Math.hypot(dx, dy);
-    const speedPxPerSec = 55 + Math.random() * 25; // 55–80 px/s slow waddle
+    const speedPxPerSec = 55 + Math.random() * 25; // 55-80 px/s slow waddle
     const durationMs = Math.max(700, (distance / speedPxPerSec) * 1000);
 
     setDir(goose, dx > 0);
@@ -364,17 +389,27 @@ function walkGooseTo(goose, target) {
 
 function pauseAndAct(goose) {
   return new Promise((resolve) => {
+    if (goosePanicking) { resolve(); return; }
+
+    // Pick a random pause pose from the sprite set so each stop looks different
+    const pose = PAUSE_POSES[Math.floor(Math.random() * PAUSE_POSES.length)];
+    setSprite(goose, pose);
+
     const r = Math.random();
+    let durationMs;
     if (r < 0.40) {
       dropGift(goose);
-      setTimeout(resolve, 1400);
+      durationMs = 1500 + Math.random() * 600;
     } else if (r < 0.75) {
       playQuackVarying(0.85, 1.25);
-      setTimeout(resolve, 1100);
+      durationMs = 1200 + Math.random() * 500;
     } else {
-      // Just stand and stare for a beat
-      setTimeout(resolve, 1600);
+      durationMs = 1400 + Math.random() * 700;
     }
+    setTimeout(() => {
+      if (!goosePanicking) setSprite(goose, 'walk');
+      resolve();
+    }, durationMs);
   });
 }
 
