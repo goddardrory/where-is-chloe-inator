@@ -239,9 +239,11 @@ function initRogueDuck() {
   const goose = document.getElementById('rogue-duck');
   if (!goose) return;
 
-  // Try to swap the emoji for a goose sprite. Prefer the animated GIF;
-  // fall back to a static PNG if only that is supplied.
-  swapToImageIfPresent(goose, ['assets/img/goose.gif', 'assets/img/goose.png']);
+  // Default visual is the static still — keeps the head straight while
+  // walking. The animated GIF (with the head-turn animation) is swapped
+  // in periodically by scheduleHeadTurn so the head-turn becomes a rare
+  // tic instead of a constant motion.
+  swapToImageIfPresent(goose, ['assets/img/goose-still.png', 'assets/img/goose.gif', 'assets/img/goose.png']);
 
   // Position absolutely — leave the existing CSS in place but JS will override
   goose.style.position = 'fixed';
@@ -268,6 +270,27 @@ function initRogueDuck() {
   if (reduced) return;
 
   setTimeout(() => beginGooseVisit(goose), 25_000);
+  scheduleHeadTurn(goose);
+}
+
+// Briefly swap the still PNG for the animated GIF every 25-50s so the
+// head-turn becomes a rare tic (~1.5s) instead of constant motion.
+function scheduleHeadTurn(goose) {
+  const delay = 25_000 + Math.random() * 25_000;
+  setTimeout(() => {
+    playHeadTurn(goose);
+    scheduleHeadTurn(goose);
+  }, delay);
+}
+
+function playHeadTurn(goose) {
+  const img = goose.querySelector('img');
+  if (!img) return; // emoji fallback in use; nothing to swap
+  // Cache-bust the GIF so it restarts from frame 0 each time
+  const gifSrc = `assets/img/goose.gif?t=${Date.now()}`;
+  const stillSrc = 'assets/img/goose-still.png';
+  img.src = gifSrc;
+  setTimeout(() => { img.src = stillSrc; }, 1500);
 }
 
 function currentDirTransform(el) {
