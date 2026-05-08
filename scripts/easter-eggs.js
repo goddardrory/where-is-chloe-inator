@@ -1,4 +1,4 @@
-import { playPerry, playPerryTheme, playQuack, playQuackVarying, playBomboclaat, playExplosion, playCreeperHiss, playDoofJingle } from './audio.js';
+import { playPerry, playPerryTheme, playQuack, playQuackVarying, playBomboclaat, playExplosion, playCreeperHiss, playDoofJingle, playLizardKing, playDwightSlut } from './audio.js';
 import { showToast } from './toast.js';
 import { silence as silenceBgMusic } from './bg-music.js';
 import { recordBomb } from './resetti-scold.js';
@@ -24,6 +24,7 @@ export function initEasterEggs() {
   initKonami();
   initDoofTyping();
   initTriStateTyping();
+  initDwightTyping();
   initBombDetonation();
   initRogueDuck();
   initLeaves();
@@ -155,6 +156,26 @@ function showDoof(forceId) {
   });
 }
 
+// === Type "dwight" anywhere → Michael's iconic SNL-impression yell ===
+function initDwightTyping() {
+  const target = 'dwight';
+  let buffer = '';
+  document.addEventListener('keydown', (e) => {
+    if (e.key.length !== 1) return;
+    buffer = (buffer + e.key.toLowerCase()).slice(-target.length);
+    if (buffer === target) {
+      buffer = '';
+      playDwightSlut();
+      showToast('👔 Michael: "DWIGHT, YOU IGNORANT SLUT!"', 'bankruptcy', 3500);
+      // Tiny screen shake for impact
+      document.body.classList.add('dwight-shake');
+      setTimeout(() => document.body.classList.remove('dwight-shake'), 480);
+      addMiles(40, 'dwight summoned');
+      awardAchievement('dwight-typed', 'IDENTITY THEFT IS NOT A JOKE!', 200);
+    }
+  });
+}
+
 // === Type "tristate" anywhere → force the tri-state-area Doof scheme ===
 function initTriStateTyping() {
   const target = 'tristate';
@@ -253,6 +274,11 @@ const GOOSE_SPRITES = {
 const PAUSE_POSES = ['look', 'sitLook', 'jump', 'idle'];
 
 let goosePanicking = false;
+let cinematicActive = false;
+
+const LIZARD_DURATION_MS = 14500; // matches lizard-king.mp3 length
+const LIZARD_HOLD_MS     = 3000;  // hold the zoom for the last 3s of audio
+const LIZARD_CHANCE      = 0.20;  // 1 in 5 goose clicks
 
 function setSprite(goose, key) {
   const img = goose.querySelector('img');
@@ -287,7 +313,16 @@ function initRogueDuck() {
   const PANIC_THRESHOLD = 3;
   const PANIC_WINDOW_MS = 1800;
   goose.addEventListener('click', () => {
-    if (goosePanicking) return;
+    if (goosePanicking || cinematicActive) return;
+
+    // 1 in 5: rare lizard king cinematic — blackout, zoom, sound, release
+    if (Math.random() < LIZARD_CHANCE) {
+      lizardKingSequence(goose);
+      addMiles(50, 'lizard king');
+      awardAchievement('lizard-king', 'Bears. Beets. Lizard King.', 350);
+      return;
+    }
+
     const now = Date.now();
     recentClicks = recentClicks.filter((t) => now - t < PANIC_WINDOW_MS);
     recentClicks.push(now);
@@ -315,6 +350,56 @@ function initRogueDuck() {
   if (reduced) return;
 
   setTimeout(() => beginGooseVisit(goose), 25_000);
+}
+
+// Rare cinematic on goose click: blacks out the page, slow-zooms onto the
+// goose to the soundtrack of "lizard king", then quietly releases as if
+// nothing happened. ~14.5 seconds total. Awards miles + achievement.
+function lizardKingSequence(goose) {
+  if (cinematicActive) return;
+  cinematicActive = true;
+
+  const facing = currentDirTransform(goose);
+  const originalZ = getComputedStyle(goose).zIndex;
+
+  // Snapshot any in-flight transition; we want a clean baseline to animate from
+  goose.style.transition = 'none';
+  goose.style.transform = facing;
+
+  const blackout = document.createElement('div');
+  blackout.className = 'lizard-king-blackout';
+  document.body.appendChild(blackout);
+
+  // Lift goose above the blackout
+  goose.style.zIndex = '500';
+
+  // Force layout flush before kicking off the animations
+  void blackout.offsetHeight;
+  void goose.offsetHeight;
+
+  blackout.classList.add('is-on');
+  playLizardKing();
+
+  // Translate to viewport centre + scale up over (duration - hold) seconds
+  const rect = goose.getBoundingClientRect();
+  const dx = window.innerWidth  / 2 - (rect.left + rect.width  / 2);
+  const dy = window.innerHeight / 2 - (rect.top  + rect.height / 2);
+  const zoomMs = LIZARD_DURATION_MS - LIZARD_HOLD_MS;
+
+  goose.style.transition = `transform ${zoomMs}ms ease-in-out`;
+  goose.style.transform = `translate(${dx}px, ${dy}px) ${facing} scale(6)`;
+
+  // After audio ends, fade everything back to normal
+  setTimeout(() => {
+    blackout.classList.remove('is-on');
+    goose.style.transition = 'transform 0.55s ease-out';
+    goose.style.transform = facing;
+    setTimeout(() => {
+      blackout.remove();
+      goose.style.zIndex = originalZ === 'auto' ? '40' : originalZ;
+      cinematicActive = false;
+    }, 650);
+  }, LIZARD_DURATION_MS);
 }
 
 // Click → goose panics, swaps to flyaway sprite, sprints off-screen,

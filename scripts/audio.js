@@ -14,6 +14,8 @@ const SOURCES = {
   explosion:   'assets/audio/explosion.mp3',
   creeperHiss: 'assets/audio/creeper-hiss.mp3',
   doofJingle:  'assets/audio/doof-jingle.mp3',
+  lizardKing:  'assets/audio/lizard-king.mp3',
+  dwightSlut:  'assets/audio/dwight-slut.mp3',
 };
 
 const cache = {};
@@ -135,6 +137,22 @@ export function playCreeperHiss() {
   noise.connect(c.destination);
   noise.start();
   return null;
+}
+
+// === Lizard king: rare goose-click cinematic cue ===
+export function playLizardKing() {
+  const audio = load('lizardKing');
+  if (!audio) { fallbackBeep(220, 0.5); return null; }
+  const inst = audio.cloneNode();
+  tryPlay(inst);
+  return inst;
+}
+
+// === Dwight, you ignorant slut: typing trigger cue ===
+export function playDwightSlut() {
+  const audio = load('dwightSlut');
+  if (!audio) { fallbackBeep(440, 0.3); return; }
+  tryPlay(audio.cloneNode(), () => fallbackBeep(440, 0.3));
 }
 
 // === Doof jingle: plays when the Doof overlay opens ===

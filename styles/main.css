@@ -893,6 +893,18 @@ input, textarea, button {
   letter-spacing: 1px;
 }
 
+/* === LIZARD KING CINEMATIC BLACKOUT === */
+.lizard-king-blackout {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 400;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s ease-out;
+}
+.lizard-king-blackout.is-on { opacity: 1; }
+
 /* === ROGUE GOOSE === */
 /* Position is controlled entirely by JS via top/left. The CSS just sets
    the initial chrome and stacking. No `bottom` rule — that conflicted

@@ -89,6 +89,16 @@
 .miles-chip.flash       { animation: miles-flash      0.7s ease-out; }
 .miles-chip.flash-loss  { animation: miles-flash-loss 0.7s ease-out; }
 
+/* === Tiny shake on the "dwight" typing trigger === */
+@keyframes dwight-shake {
+  0%, 100% { transform: translate(0, 0); }
+  20%      { transform: translate(-5px, 1px); }
+  40%      { transform: translate(5px, -1px); }
+  60%      { transform: translate(-3px, 1px); }
+  80%      { transform: translate(3px, -1px); }
+}
+body.dwight-shake { animation: dwight-shake 0.48s ease-out; }
+
 /* === Bell rain on arrival === */
 @keyframes bell-fall {
   0%   { transform: translateY(-20vh) rotate(0deg);   opacity: 1; }
