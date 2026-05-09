@@ -152,6 +152,12 @@ async function init() {
   syncBonusMiles();
   setInterval(syncBonusMiles, 60_000);
 
+  // Server-side flight bonuses: when a leg's arrival time has passed, the
+  // family wallet is credited with that flight's bonus exactly once. The
+  // `creditedFlights` array on the server is the source of truth; this loop
+  // just nudges the server when it spots a not-yet-credited landed flight.
+  initFlightBonusCredits();
+
   // Nook's Cranny shop — wires the floating button + modal + sticker row
   initShop();
 
@@ -218,8 +224,11 @@ function tick() {
     }
   }
 
-  // Total miles = flight-derived base + interactive bonus from localStorage
-  setText('miles-count', miles + getBonusMiles());
+  // Hero shows the family wallet — the spendable total. Flight progress no
+  // longer adds to this number cosmetically; instead each leg's bonus is
+  // banked into the wallet by the server when the leg arrives (see
+  // creditPendingFlights below).
+  setText('miles-count', getBonusMiles());
 
   const fill = document.getElementById('progress-fill');
   if (fill) fill.style.width = `${(progress * 100).toFixed(2)}%`;
@@ -612,6 +621,63 @@ function initInteractiveMiles() {
       addMiles(1, 'tap Chloe');
       awardAchievement('tap-chloe', 'Hi Chloe!', 50);
     });
+  }
+}
+
+// === Server-side flight bonuses ===
+//
+// Each leg pays a fixed bonus (server-defined, currently 500) into the family
+// wallet the first time its arrival time has passed. The server's
+// `creditedFlights` blob is the source of truth — this loop just nudges the
+// server when it spots a not-yet-credited landed flight, and is safe to run
+// from every family device on every poll because the server's credit
+// endpoint is idempotent.
+
+const CREDIT_URL = '/.netlify/functions/miles';
+let creditedFlightsCache = new Set();
+
+function initFlightBonusCredits() {
+  // Capture the server's authoritative list whenever a sync runs.
+  document.addEventListener('server-state', (e) => {
+    const list = e.detail && e.detail.creditedFlights;
+    if (Array.isArray(list)) creditedFlightsCache = new Set(list);
+  });
+  // First check immediately, then on each minute alongside the wallet sync.
+  checkAndCreditFlights();
+  setInterval(checkAndCreditFlights, 60_000);
+}
+
+async function checkAndCreditFlights() {
+  const now = Date.now();
+  for (const f of FLIGHTS) {
+    const arrMs = Date.parse(f.arr.iso);
+    if (!Number.isFinite(arrMs)) continue;
+    if (now < arrMs) continue;                    // still in flight
+    if (creditedFlightsCache.has(f.num)) continue; // already paid
+
+    try {
+      const res = await fetch(CREDIT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ creditFlight: f.num }),
+      });
+      if (!res.ok) continue;
+      const data = await res.json();
+      // Update local cache regardless of who claimed the credit.
+      if (Array.isArray(data.creditedFlights)) {
+        creditedFlightsCache = new Set(data.creditedFlights);
+      } else {
+        creditedFlightsCache.add(f.num);
+      }
+      // If THIS device's call landed the credit, surface it everywhere.
+      if (data.awarded > 0 && Number.isFinite(data.total)) {
+        try { localStorage.setItem('whereischloe.bonusMiles', String(data.total)); } catch {}
+        document.dispatchEvent(new CustomEvent('miles-change', {
+          detail: { delta: data.awarded, reason: `flight-bonus:${f.num}`, total: data.total },
+        }));
+        showToast(`✈️ Flight ${f.num} bonus: +${data.awarded} miles`, 'success', 4500);
+      }
+    } catch { /* offline; pick up next sync */ }
   }
 }
 

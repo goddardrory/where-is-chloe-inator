@@ -16,6 +16,16 @@ const STORE_NAME = 'where-is-chloe';
 const KEY        = 'nookMilesTotal';
 const MAX_DELTA  = 5000;
 
+// Per-flight bonus paid into the family wallet the first time a flight's
+// arrival time has passed. Idempotent — the `creditedFlights` blob tracks
+// which legs have already been credited so a polling client can call
+// `creditFlight` repeatedly without double-paying.
+const FLIGHT_BONUSES = {
+  'VS0106': 500,
+  'VS0449': 500,
+  'SA0547': 500,
+};
+
 exports.handler = async (event) => {
   let store;
   try {
@@ -32,12 +42,13 @@ exports.handler = async (event) => {
   }
 
   if (event.httpMethod === 'GET') {
-    const [rawTotal, rawImmunity, rawJackpot, rawDiscount, rawTrees] = await Promise.all([
+    const [rawTotal, rawImmunity, rawJackpot, rawDiscount, rawTrees, rawCredited] = await Promise.all([
       store.get(KEY),
       store.get('jackpotImmunity'),
       store.get('jackpotActive'),
       store.get('shopDiscountUntil'),
       store.get('trees'),
+      store.get('creditedFlights'),
     ]);
     const total = toInt(rawTotal, 0);
     const immunity = toInt(rawImmunity, 0);
@@ -47,13 +58,42 @@ exports.handler = async (event) => {
     if (rawTrees) {
       try { trees = JSON.parse(rawTrees); } catch {}
     }
-    return json(200, { total, immunity, activeJackpot, discountUntil, trees });
+    let creditedFlights = [];
+    if (rawCredited) {
+      try { creditedFlights = JSON.parse(rawCredited); } catch {}
+    }
+    return json(200, { total, immunity, activeJackpot, discountUntil, trees, creditedFlights });
   }
 
   if (event.httpMethod === 'POST') {
     let body;
     try { body = JSON.parse(event.body || '{}'); }
     catch { return json(400, { error: 'Invalid JSON' }); }
+
+    // creditFlight action — idempotently bank the per-leg bonus into the
+    // family wallet the first time the flight has arrived. Safe to call
+    // repeatedly from any device on every poll; once credited it just
+    // returns the current total.
+    if (body.creditFlight) {
+      const flightId = String(body.creditFlight);
+      const bonus = FLIGHT_BONUSES[flightId];
+      if (!bonus) return json(400, { error: 'Unknown flight' });
+
+      const rawCredited = await store.get('creditedFlights');
+      let credited = [];
+      if (rawCredited) {
+        try { credited = JSON.parse(rawCredited); } catch {}
+      }
+      const current = toInt(await store.get(KEY), 0);
+      if (credited.includes(flightId)) {
+        return json(200, { total: current, awarded: 0, alreadyCredited: true, creditedFlights: credited });
+      }
+      credited.push(flightId);
+      const next = current + bonus;
+      await store.set(KEY, String(next));
+      await store.set('creditedFlights', JSON.stringify(credited));
+      return json(200, { total: next, awarded: bonus, creditedFlight: flightId, creditedFlights: credited });
+    }
 
     // Wipe action — sets the family total to zero atomically. Used by
     // detonation as a more dramatic punishment than a fixed -1000. Honors
