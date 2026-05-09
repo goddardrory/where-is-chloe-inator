@@ -32,9 +32,22 @@ exports.handler = async (event) => {
   }
 
   if (event.httpMethod === 'GET') {
-    const raw = await store.get(KEY);
-    const total = toInt(raw, 0);
-    return json(200, { total });
+    const [rawTotal, rawImmunity, rawJackpot, rawDiscount, rawTrees] = await Promise.all([
+      store.get(KEY),
+      store.get('jackpotImmunity'),
+      store.get('jackpotActive'),
+      store.get('shopDiscountUntil'),
+      store.get('trees'),
+    ]);
+    const total = toInt(rawTotal, 0);
+    const immunity = toInt(rawImmunity, 0);
+    const activeJackpot = rawJackpot || null;
+    const discountUntil = toInt(rawDiscount, 0);
+    let trees = [];
+    if (rawTrees) {
+      try { trees = JSON.parse(rawTrees); } catch {}
+    }
+    return json(200, { total, immunity, activeJackpot, discountUntil, trees });
   }
 
   if (event.httpMethod === 'POST') {
@@ -43,8 +56,17 @@ exports.handler = async (event) => {
     catch { return json(400, { error: 'Invalid JSON' }); }
 
     // Wipe action — sets the family total to zero atomically. Used by
-    // detonation as a more dramatic punishment than a fixed -1000.
+    // detonation as a more dramatic punishment than a fixed -1000. Honors
+    // an active immunity token (jackpotImmunity); when present, the wipe is
+    // absorbed and the token consumed instead.
     if (body.wipe === true) {
+      const immunityRaw = await store.get('jackpotImmunity');
+      const immunity = toInt(immunityRaw, 0);
+      if (immunity >= 1) {
+        await store.set('jackpotImmunity', String(immunity - 1));
+        const total = toInt(await store.get(KEY), 0);
+        return json(200, { total, wiped: false, immunityConsumed: true });
+      }
       await store.set(KEY, '0');
       return json(200, { total: 0, wiped: true });
     }

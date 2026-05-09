@@ -70,7 +70,7 @@ const ITEMS = [
   { icon: I_SCHRUTE, text: 'Dwight: "Bears. Beets. Boeings."' },
   { icon: I_SCHRUTE, text: 'Dwight: "Identity theft is not a joke, Chloe! Millions of families suffer every year!"' },
   { icon: I_SCHRUTE, text: 'Dwight: "Through concentration I can raise and lower my altitude at will. FALSE — but my cholesterol, yes."' },
-  { icon: I_SCHRUTE, text: 'Dwight: "FALSE. The real Bermuda Triangle is JFK, DXB, and DUR."' },
+  { icon: I_SCHRUTE, text: 'Dwight: "FALSE. The real Bermuda Triangle is LHR, JNB, and DUR."' },
   { icon: I_DWIGHT, text: 'Dwight: "Whenever I\'m about to do something I think \'would an idiot do that?\' If they would, I do not."' },
   { icon: I_DWIGHT, text: 'Dwight: "I am the Lackawanna County Volunteer Sheriff\'s Deputy AND a frequent flyer. Both roles are important."' },
 
@@ -117,7 +117,7 @@ const ITEMS = [
   { icon: I_ISABELLE, text: 'Isabelle: "Ohhh, I love watching the Departures board. So exciting!"' },
   { icon: I_KK, text: 'KK Slider: "Hey there. KK Airline Theme is loaded if you wanna toggle it."' },
   { icon: I_KK, text: 'KK Slider: "Catch a smooth flight, kiddo. I\'ll cue up something mellow."' },
-  { icon: I_BLATHERS, text: 'Blathers: "WHO… WHOOO would have guessed flight EK0204 spans three continents! Astonishing!"' },
+  { icon: I_BLATHERS, text: 'Blathers: "WHO… WHOOO would have guessed flight VS0449 spans two hemispheres! Astonishing!"' },
   { icon: I_BLATHERS, text: 'Blathers: "Bugs?! Don\'t talk to me about bugs. Especially in the cabin."' },
   { icon: I_CELESTE, text: 'Celeste: "Look up, traveler — even from 39,000 feet the constellations are the same."' },
   { icon: I_DAISY, text: 'Daisy Mae: "Daisy Mae here! Turnip prices are spiking — too bad you\'re mid-flight!"' },

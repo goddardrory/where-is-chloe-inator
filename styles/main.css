@@ -934,8 +934,8 @@ input, textarea, button {
 }
 .shop-stickers:empty { display: none; }
 .shop-sticker {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: var(--cream);
   border: 2px solid #fff;
@@ -944,7 +944,39 @@ input, textarea, button {
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  cursor: help;
+  cursor: pointer;
+  position: relative;
+  padding: 0;
+  /* Subtle wiggle every ~60s to advertise interactivity. animation-delay set
+     per-sticker in JS so the row doesn't sync. */
+  animation: sticker-wiggle 60s ease-in-out infinite;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.shop-sticker:hover {
+  transform: translateY(-2px) scale(1.1);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+.shop-sticker:active { transform: translateY(0) scale(0.95); }
+.shop-sticker-emoji { line-height: 1; }
+.shop-sticker-count {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  font-size: 10px;
+  font-weight: 900;
+  background: var(--gold);
+  color: var(--nook-deep);
+  border: 1px solid #fff;
+  border-radius: 999px;
+  padding: 0 4px;
+  line-height: 1.4;
+}
+
+@keyframes sticker-wiggle {
+  0%, 96%, 100% { transform: rotate(0deg); }
+  97%           { transform: rotate(-8deg); }
+  98%           { transform: rotate(8deg); }
+  99%           { transform: rotate(-4deg); }
 }
 
 /* Shop modal */
@@ -1686,4 +1718,1184 @@ body.konami { cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* ===========================================
+   DOOFENSHMIRTZ SELF-DESTRUCT FEATURE
+   =========================================== */
+
+/* === Settings gear (next to shop button) === */
+.settings-button {
+  position: fixed;
+  left: 134px;             /* sits right of the shop button */
+  bottom: 16px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #c8d8e8, #8aa5bf);
+  border: 3px solid #fff;
+  border-radius: 50%;
+  font-size: 20px;
+  z-index: 50;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18), 0 2px 0 #6a8aa8;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.settings-button:hover { transform: rotate(60deg) translateY(-1px); }
+.settings-button:active { transform: rotate(30deg) translateY(1px); }
+
+@media (max-width: 540px) {
+  .settings-button { left: auto; right: 16px; bottom: 78px; }
+}
+
+/* === Self-destruct FAB (bottom-right) === */
+.doof-button-fab {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  display: none;             /* hidden until at least one is owned */
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(180deg, #ff3b3b 0%, #b81616 100%);
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  font-weight: 900;
+  font-size: 13px;
+  padding: 12px 16px;
+  border: 3px solid #fff;
+  border-radius: var(--radius-pill);
+  box-shadow:
+    0 0 0 3px rgba(255, 59, 59, 0.4),
+    0 4px 14px rgba(184, 22, 22, 0.55),
+    0 2px 0 #6a0a0a;
+  z-index: 60;
+  cursor: pointer;
+  letter-spacing: 1px;
+}
+.doof-button-fab.is-armed {
+  display: inline-flex;
+  animation: doof-pulse 1.4s ease-in-out infinite;
+}
+.doof-button-fab:hover { transform: translateY(-2px) scale(1.04); }
+.doof-button-fab:active { transform: translateY(1px) scale(0.98); }
+.doof-button-fab[disabled] { cursor: not-allowed; opacity: 0.6; animation: none; }
+.doof-button-emoji { font-size: 18px; line-height: 1; filter: drop-shadow(0 0 4px rgba(255, 200, 0, 0.5)); }
+.doof-button-count {
+  background: #fff;
+  color: #b81616;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 11px;
+  font-weight: 900;
+}
+@keyframes doof-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 3px rgba(255, 59, 59, 0.4),
+      0 4px 14px rgba(184, 22, 22, 0.55),
+      0 2px 0 #6a0a0a;
+  }
+  50% {
+    box-shadow:
+      0 0 0 8px rgba(255, 59, 59, 0.0),
+      0 6px 20px rgba(184, 22, 22, 0.75),
+      0 2px 0 #6a0a0a;
+  }
+}
+
+/* === Settings modal (mirrors shop modal) === */
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(155, 175, 200, 0.25), transparent 55%),
+    rgba(20, 14, 6, 0.88);
+  z-index: 360;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  display: none;
+  overflow-y: auto;
+}
+.settings-overlay.is-open { display: flex; }
+
+.settings-content {
+  background: linear-gradient(180deg, var(--cream) 0%, var(--cream-warm) 100%);
+  border: 4px solid #fff;
+  border-radius: var(--radius-lg);
+  padding: 22px 22px 20px;
+  max-width: 560px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+  position: relative;
+  animation: splash-pop 0.4s cubic-bezier(.34,1.56,.64,1) both;
+}
+.settings-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.08);
+  font-size: 24px;
+  color: var(--nook-deep);
+  font-weight: 900;
+  line-height: 1;
+  border: none;
+  cursor: pointer;
+}
+.settings-close:hover { background: rgba(0, 0, 0, 0.15); }
+.settings-header { text-align: center; margin-bottom: 14px; }
+.settings-eyebrow {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  color: var(--nook);
+  text-transform: uppercase;
+}
+.settings-title { font-size: 22px; font-weight: 900; color: var(--nook-deep); margin: 4px 0 6px; }
+.settings-sub { font-size: 12px; color: var(--nook); margin: 0; }
+.settings-list { display: grid; gap: 8px; margin: 12px 0; }
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 2px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+}
+.settings-row.is-locked { opacity: 0.55; background: rgba(255, 255, 255, 0.25); }
+.settings-row-emoji { font-size: 22px; line-height: 1; }
+.settings-row-text { flex: 1; text-align: left; }
+.settings-row-name { font-weight: 800; color: var(--nook-deep); font-size: 13px; }
+.settings-row-desc { font-size: 11px; color: var(--nook); margin-top: 2px; }
+.settings-row-lock { font-size: 14px; }
+.settings-toggle {
+  appearance: none;
+  width: 42px; height: 24px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.18);
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+  border: none;
+  flex-shrink: 0;
+}
+.settings-toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 20px; height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+.settings-toggle:checked { background: var(--gold-deep); }
+.settings-toggle:checked::after { transform: translateX(18px); }
+.settings-toggle[disabled] { cursor: not-allowed; }
+.settings-note { font-size: 11px; color: var(--nook); text-align: center; margin: 12px 0 0; opacity: 0.8; }
+
+/* === Tri-State takeover (page upside-down) === */
+body.tristate-active { transform: rotate(180deg); transform-origin: 50% 50%; transition: transform 0.8s cubic-bezier(.34,1.56,.64,1); }
+
+.tristate-banner {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  background: linear-gradient(90deg, #6a3aa8, #b14ad8, #6a3aa8);
+  color: #fff;
+  text-align: center;
+  font-weight: 900;
+  font-size: 14px;
+  letter-spacing: 2px;
+  padding: 8px 12px;
+  z-index: 400;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  animation: tristate-shimmer 3s linear infinite;
+  background-size: 200% 100%;
+}
+@keyframes tristate-shimmer {
+  0%   { background-position:  0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+/* === Immunity shield (next to miles chip) === */
+.immunity-shield {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  font-size: 26px;
+  z-index: 70;
+  filter: drop-shadow(0 0 6px rgba(94, 154, 255, 0.85)) drop-shadow(0 0 14px rgba(94, 154, 255, 0.4));
+  animation: shield-float 2.5s ease-in-out infinite;
+  cursor: help;
+}
+@keyframes shield-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+
+/* === Shop sticker FX (per-item interactivity) === */
+
+/* Pretzel Day banner — toggled by clicking the pretzel sticker */
+.shop-pretzel-banner {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  background: linear-gradient(90deg, #d4a015, #f5c518, #d4a015);
+  color: var(--nook-deep);
+  text-align: center;
+  font-weight: 900;
+  font-size: 14px;
+  letter-spacing: 4px;
+  padding: 6px 12px;
+  z-index: 380;
+  display: none;
+  border-bottom: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+body.pretzel-banner-active .shop-pretzel-banner { display: block; }
+
+/* Tractor drive-by */
+.shop-fx-tractor {
+  position: fixed;
+  bottom: 24px;
+  left: -120px;
+  z-index: 9;
+  font-size: 64px;
+  pointer-events: none;
+  animation: tractor-drive 6s linear forwards;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+}
+@keyframes tractor-drive {
+  from { left: -120px; transform: translateY(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateY(-2px); }
+  20%, 40%, 60%, 80%      { transform: translateY(0); }
+  to   { left: 110vw; }
+}
+
+/* Floating "+1" or ☕ emerging from a sticker */
+.shop-fx-floating {
+  position: fixed;
+  z-index: 200;
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--gold-deep);
+  text-shadow: 0 1px 0 #fff, 0 2px 4px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+  animation: float-up 2s ease-out forwards;
+  white-space: nowrap;
+  transform: translate(-50%, 0);
+}
+@keyframes float-up {
+  from { transform: translate(-50%, 0) scale(0.8); opacity: 0; }
+  20%  { opacity: 1; }
+  to   { transform: translate(-50%, -120px) scale(1.2); opacity: 0; }
+}
+
+/* Hatted goose drive-by */
+.shop-fx-hatted-goose {
+  position: fixed;
+  bottom: 4px;
+  left: -120px;
+  z-index: 9;
+  pointer-events: none;
+  animation: hatted-goose-walk 9s linear forwards;
+}
+.shop-fx-hatted-goose img { width: 64px; height: 64px; }
+.shop-fx-hat {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-30%) rotate(-12deg);
+  font-size: 28px;
+}
+@keyframes hatted-goose-walk {
+  from { left: -120px; }
+  to   { left: 110vw; }
+}
+
+/* === Disco mode (🪩 Disco Ball shop item) === */
+
+.disco-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  display: none;
+  pointer-events: none;
+  overflow: hidden;
+}
+body.disco-active .disco-overlay { display: block; }
+
+/* Dim layer just below the disco overlay so spotlights pop */
+body.disco-active::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 5, 18, 0.85);
+  z-index: 595;
+  pointer-events: none;
+  animation: disco-fade-in 0.6s ease-out;
+}
+@keyframes disco-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Spinning disco ball — clickable, doubles as the exit button */
+.disco-ball {
+  position: fixed;
+  top: 14%;
+  left: 50%;
+  font-size: 110px;
+  z-index: 615;
+  transform: translateX(-50%);
+  background: transparent;
+  border: none;
+  pointer-events: auto;
+  cursor: pointer;
+  filter: drop-shadow(0 0 28px rgba(255, 255, 255, 0.85)) drop-shadow(0 0 60px rgba(245, 197, 24, 0.4));
+  animation: disco-ball-spin 4s linear infinite;
+  user-select: none;
+}
+.disco-ball:hover { filter: drop-shadow(0 0 40px rgba(255, 255, 255, 1)) drop-shadow(0 0 70px rgba(245, 197, 24, 0.6)); }
+@keyframes disco-ball-spin {
+  from { transform: translateX(-50%) rotate(0deg); }
+  to   { transform: translateX(-50%) rotate(360deg); }
+}
+
+/* Five colored spotlights drifting across the page — slow eased motion,
+   NOT strobe (epilepsy-safe). mix-blend-mode: screen lets them overlap
+   gracefully without muddy blacks. */
+.disco-spotlight {
+  position: absolute;
+  width: 520px;
+  height: 520px;
+  border-radius: 50%;
+  filter: blur(50px);
+  mix-blend-mode: screen;
+  opacity: 0.85;
+  pointer-events: none;
+  top: 0;
+  left: 0;
+  will-change: transform;
+}
+.disco-spotlight.s1 { background: radial-gradient(circle, rgba(255, 0, 200, 0.95), transparent 60%); animation: disco-spot-1 7.4s ease-in-out infinite alternate; }
+.disco-spotlight.s2 { background: radial-gradient(circle, rgba(50, 255, 150, 0.95), transparent 60%); animation: disco-spot-2 9.2s ease-in-out infinite alternate; }
+.disco-spotlight.s3 { background: radial-gradient(circle, rgba(140, 90, 255, 0.95), transparent 60%); animation: disco-spot-3 8.1s ease-in-out infinite alternate; }
+.disco-spotlight.s4 { background: radial-gradient(circle, rgba(255, 200, 30, 0.95), transparent 60%); animation: disco-spot-4 6.6s ease-in-out infinite alternate; }
+.disco-spotlight.s5 { background: radial-gradient(circle, rgba(0, 200, 255, 0.95), transparent 60%); animation: disco-spot-5 10.3s ease-in-out infinite alternate; }
+
+@keyframes disco-spot-1 {
+  from { transform: translate(-220px, -180px); }
+  to   { transform: translate(72vw, 60vh); }
+}
+@keyframes disco-spot-2 {
+  from { transform: translate(70vw, -120px); }
+  to   { transform: translate(8vw, 68vh); }
+}
+@keyframes disco-spot-3 {
+  from { transform: translate(20vw, 70vh); }
+  to   { transform: translate(82vw, -60px); }
+}
+@keyframes disco-spot-4 {
+  from { transform: translate(78vw, 70vh); }
+  to   { transform: translate(-120px, 12vh); }
+}
+@keyframes disco-spot-5 {
+  from { transform: translate(-180px, 50vh); }
+  to   { transform: translate(86vw, -40px); }
+}
+
+/* === Money Trees === */
+
+/* The canopy is a fixed-position layer at z-index 200 that holds all
+   tree elements. Below modals (350+) and cinematics (500+), but above the
+   hero card and tracker. */
+.tree-canopy {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 200;
+}
+
+.tree-element {
+  position: absolute;
+  transform: translate(-50%, -100%);     /* anchor at the trunk base */
+  pointer-events: auto;
+  background: transparent;
+  border: none;
+  cursor: default;
+  padding: 0;
+  width: 80px;
+  height: 100px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  filter: drop-shadow(0 6px 4px rgba(0, 0, 0, 0.18));
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.tree-element:disabled { cursor: default; }
+.tree-element.is-ripe { cursor: pointer; }
+.tree-element.is-ripe:hover { transform: translate(-50%, -103%) scale(1.05); }
+.tree-element.is-ripe { animation: tree-ripe-pulse 2.4s ease-in-out infinite; }
+@keyframes tree-ripe-pulse {
+  0%, 100% { filter: drop-shadow(0 6px 4px rgba(0, 0, 0, 0.18)) drop-shadow(0 0 0 rgba(245, 197, 24, 0)); }
+  50%      { filter: drop-shadow(0 8px 6px rgba(0, 0, 0, 0.22)) drop-shadow(0 0 12px rgba(245, 197, 24, 0.7)); }
+}
+
+.tree-img { display: block; max-width: 100%; max-height: 100%; image-rendering: pixelated; }
+.tree-emoji { line-height: 1; }
+.tree-stage-sapling .tree-emoji { font-size: 32px; }
+.tree-stage-growing .tree-emoji { font-size: 56px; }
+.tree-stage-mature  .tree-emoji { font-size: 72px; }
+
+.tree-bags {
+  position: absolute;
+  top: 36%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 14px;
+  letter-spacing: -2px;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3));
+  pointer-events: none;
+  animation: bag-bob 2.6s ease-in-out infinite;
+}
+@keyframes bag-bob {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%      { transform: translateX(-50%) translateY(-3px); }
+}
+
+/* Plant mode — soft tint + custom cursor across the page */
+body.is-planting {
+  cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'><text y='32' font-size='34'>🌱</text></svg>") 20 20, crosshair;
+}
+body.is-planting::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: rgba(50, 130, 70, 0.12);
+  pointer-events: none;
+  z-index: 199;
+}
+
+/* Harvest coin-fly — coins fly from tree to miles chip */
+.tree-fly-coin {
+  position: fixed;
+  font-size: 22px;
+  z-index: 250;
+  pointer-events: none;
+  animation: tree-fly 1.2s cubic-bezier(.34,1.06,.64,1) forwards;
+  filter: drop-shadow(0 1px 3px rgba(212, 168, 20, 0.6));
+}
+@keyframes tree-fly {
+  0%   { transform: translate(0, 0) scale(0.6); opacity: 0; }
+  20%  { transform: translate(0, -10px) scale(1.0); opacity: 1; }
+  100% {
+    transform: translate(var(--target-x), var(--target-y)) scale(0.7);
+    opacity: 0;
+  }
+}
+
+/* === Slot machine — Tom Nook's Cabaret === */
+.casino-button {
+  position: fixed;
+  left: 188px;
+  bottom: 16px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #e84a5f, #b81616);
+  border: 3px solid #fff;
+  border-radius: 50%;
+  font-size: 22px;
+  z-index: 50;
+  box-shadow: 0 4px 12px rgba(232, 74, 95, 0.4), 0 2px 0 #6a0a0a;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.casino-button:hover { transform: translateY(-2px) rotate(-6deg); }
+.casino-button:active { transform: translateY(1px); }
+@media (max-width: 540px) {
+  .casino-button { left: auto; right: 78px; bottom: 78px; }
+}
+
+.slots-overlay {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(232, 74, 95, 0.25), transparent 55%),
+    rgba(20, 14, 6, 0.92);
+  z-index: 370;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  display: none;
+  overflow-y: auto;
+}
+.slots-overlay.is-open { display: flex; }
+
+.slots-cabinet {
+  background: linear-gradient(180deg, #2a1a08 0%, #4a2a10 100%);
+  border: 4px solid var(--gold);
+  border-radius: var(--radius-lg);
+  padding: 22px 22px 18px;
+  text-align: center;
+  max-width: 560px;
+  width: 100%;
+  max-height: 92vh;
+  overflow-y: auto;
+  position: relative;
+  color: #fff8e0;
+  box-shadow:
+    inset 0 0 0 2px #fff,
+    0 18px 56px rgba(0, 0, 0, 0.6);
+  animation: splash-pop 0.4s cubic-bezier(.34,1.56,.64,1) both;
+}
+
+.slots-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 24px;
+  color: #fff;
+  font-weight: 900;
+  line-height: 1;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+}
+.slots-close:hover { background: rgba(255, 255, 255, 0.2); }
+
+.slots-header { margin-bottom: 16px; }
+.slots-eyebrow {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 4px;
+  color: var(--gold);
+  text-transform: uppercase;
+}
+.slots-title {
+  font-size: 22px;
+  font-weight: 900;
+  color: #fff8e0;
+  margin: 4px 0 0;
+  letter-spacing: -0.3px;
+}
+
+.slots-play-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin: 12px 0;
+}
+
+.slots-reels {
+  display: flex;
+  gap: 8px;
+  background: #110804;
+  padding: 12px;
+  border-radius: 12px;
+  border: 3px solid var(--gold-deep);
+  box-shadow: inset 0 4px 12px rgba(0, 0, 0, 0.7);
+}
+.slots-reel {
+  width: 64px;
+  height: 80px;
+  background: linear-gradient(180deg, #fff 0%, #ddd 100%);
+  border: 2px solid #888;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+.slots-reel-inner {
+  font-size: 44px;
+  line-height: 1;
+}
+.slots-reel-inner.is-spinning {
+  animation: reel-blur 0.18s linear infinite;
+}
+@keyframes reel-blur {
+  0%   { transform: translateY(0);    filter: blur(1.5px); }
+  50%  { transform: translateY(-6px); filter: blur(2px);   }
+  100% { transform: translateY(0);    filter: blur(1.5px); }
+}
+
+.slots-lever-box {
+  display: flex;
+  align-items: flex-start;
+  height: 110px;
+}
+.slots-lever {
+  position: relative;
+  width: 30px;
+  height: 100px;
+  background: linear-gradient(180deg, #888 0%, #555 100%);
+  border: 2px solid #aaa;
+  border-radius: 16px;
+  cursor: grab;
+  padding: 0;
+  box-shadow: inset 0 -4px 8px rgba(0, 0, 0, 0.4);
+}
+.slots-lever:active { cursor: grabbing; }
+.slots-lever.is-disabled { opacity: 0.5; cursor: not-allowed; }
+.slots-lever-handle {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 36px;
+  height: 36px;
+  background: radial-gradient(circle at 30% 30%, #ff6b6b, #b81616);
+  border: 3px solid #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  box-shadow: 0 2px 6px rgba(184, 22, 22, 0.5);
+  cursor: grab;
+  user-select: none;
+  transition: transform 0.25s cubic-bezier(.34,1.56,.64,1);
+}
+
+.slots-result {
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff8e0;
+  margin: 8px 0 12px;
+  min-height: 1.4em;
+}
+
+.slots-bet-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.slots-bet-label {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--gold);
+}
+.slots-bet-step {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid var(--gold);
+  color: var(--gold);
+  font-weight: 900;
+  font-size: 16px;
+  cursor: pointer;
+}
+.slots-bet-step:hover { background: rgba(245, 197, 24, 0.2); }
+.slots-bet-input {
+  width: 90px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid var(--gold);
+  border-radius: 8px;
+  color: var(--nook-deep);
+  font-weight: 900;
+  font-size: 16px;
+  text-align: center;
+}
+
+.slots-paytable {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #fff8e0;
+}
+.slots-paytable summary {
+  cursor: pointer;
+  letter-spacing: 1px;
+  font-weight: 800;
+  color: var(--gold);
+}
+.slots-paytable-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 8px;
+  text-align: left;
+}
+.slots-paytable-mult { font-weight: 900; color: var(--gold); }
+
+/* === Tom Nook Loan Certificate === */
+.loan-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 14, 6, 0.9);
+  z-index: 380;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  display: none;
+  overflow-y: auto;
+}
+.loan-overlay.is-open { display: flex; }
+
+.loan-content {
+  background: linear-gradient(180deg, var(--cream) 0%, var(--cream-warm) 100%);
+  border: 4px solid #fff;
+  border-radius: var(--radius-lg);
+  padding: 22px 22px 20px;
+  max-width: 560px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+  position: relative;
+  text-align: center;
+  animation: splash-pop 0.4s cubic-bezier(.34,1.56,.64,1) both;
+}
+
+/* Parchment vibe for the "sign here" modal */
+.loan-parchment {
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(212, 168, 20, 0.04) 0px,
+      rgba(212, 168, 20, 0.04) 1px,
+      transparent 1px,
+      transparent 28px
+    ),
+    linear-gradient(180deg, #fff7e0 0%, #f1dfaa 100%);
+  border-color: #d6b56a;
+}
+
+.loan-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.08);
+  font-size: 24px;
+  color: var(--nook-deep);
+  font-weight: 900;
+  line-height: 1;
+  border: none;
+  cursor: pointer;
+}
+.loan-close:hover { background: rgba(0, 0, 0, 0.15); }
+
+.loan-title {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--nook-deep);
+  margin: 8px 0 6px;
+  letter-spacing: -0.3px;
+}
+.loan-sub {
+  font-size: 13px;
+  color: var(--nook);
+  margin: 4px 0 16px;
+}
+.loan-sign-button {
+  background: linear-gradient(135deg, var(--gold), var(--gold-deep));
+  color: var(--nook-deep);
+  font-weight: 900;
+  font-size: 16px;
+  padding: 14px 28px;
+  border: 3px solid #fff;
+  border-radius: var(--radius-pill);
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 var(--gold-deep);
+}
+.loan-sign-button:hover { transform: translateY(-1px); }
+.loan-sign-button:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--gold-deep); }
+.loan-fine-print {
+  font-size: 7.5px;
+  color: rgba(20, 14, 6, 0.55);
+  margin: 24px 0 0;
+  line-height: 1.3;
+  letter-spacing: 0.1px;
+}
+
+.loan-pick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+  margin: 12px 0 0;
+}
+.loan-pick-card {
+  background: rgba(255, 255, 255, 0.6);
+  border: 2px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  padding: 12px 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.loan-pick-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.85);
+}
+.loan-pick-emoji { font-size: 30px; line-height: 1; }
+.loan-pick-name {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--nook-deep);
+  text-align: center;
+}
+
+/* Reveal overlay — smug Tom Nook full-screen reveal */
+.loan-reveal-overlay {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(245, 197, 24, 0.3), transparent 60%),
+    rgba(20, 14, 6, 0.95);
+  z-index: 480;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: loan-reveal-shake 0.4s ease-out;
+}
+.loan-reveal-overlay.is-open { display: flex; }
+@keyframes loan-reveal-shake {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(-6px, 4px); }
+  50%  { transform: translate(4px, -3px); }
+  75%  { transform: translate(-3px, 2px); }
+  100% { transform: translate(0, 0); }
+}
+.loan-reveal-content {
+  background: linear-gradient(180deg, var(--cream) 0%, var(--cream-warm) 100%);
+  border: 4px solid #fff;
+  border-radius: var(--radius-lg);
+  padding: 28px 26px 22px;
+  max-width: 540px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.5);
+  animation: splash-pop 0.5s cubic-bezier(.34,1.56,.64,1) both;
+}
+.loan-reveal-portrait {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  border: 4px solid var(--gold);
+  background: var(--cream-warm);
+  margin-bottom: 12px;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+}
+.loan-reveal-speech {
+  font-size: 14px;
+  color: var(--nook-deep);
+  line-height: 1.5;
+  font-weight: 600;
+  margin: 8px 0 18px;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.6);
+  border: 2px solid rgba(212, 168, 20, 0.4);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.loan-reveal-close {
+  background: rgba(0, 0, 0, 0.08);
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  border-radius: var(--radius-pill);
+  padding: 8px 22px;
+  font-weight: 800;
+  color: var(--nook-deep);
+  cursor: pointer;
+}
+.loan-reveal-close:hover { background: rgba(0, 0, 0, 0.15); }
+
+/* Persistent debt badge (next to miles chip) */
+.loan-debt-badge {
+  position: fixed;
+  top: 60px;
+  right: 16px;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #fff5d8, #f1dfaa);
+  border: 2px solid #b81616;
+  border-radius: var(--radius-pill);
+  padding: 4px 10px 4px 4px;
+  box-shadow: 0 4px 12px rgba(184, 22, 22, 0.25);
+  cursor: help;
+}
+.loan-debt-portrait {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid #fff;
+  object-fit: cover;
+  object-position: top center;
+  background: var(--cream);
+}
+.loan-debt-text {
+  font-size: 12px;
+  font-weight: 900;
+  color: #b81616;
+  letter-spacing: 0.3px;
+}
+
+/* === Doof self-destruct cinematic === */
+.doof-cinematic {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: none;
+  background: radial-gradient(circle at 50% 50%, rgba(80, 30, 110, 0.92), rgba(20, 5, 30, 0.98));
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  overflow: hidden;
+}
+.doof-cinematic.is-active { display: flex; }
+.doof-cinematic-doof {
+  width: 220px;
+  height: auto;
+  filter: drop-shadow(0 0 20px rgba(186, 78, 226, 0.6));
+  animation: doof-flail 0.5s ease-in-out infinite alternate;
+}
+@keyframes doof-flail {
+  from { transform: rotate(-6deg) translateY(0); }
+  to   { transform: rotate(6deg)  translateY(-8px); }
+}
+.doof-cinematic-explosion {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 220px;
+  opacity: 0;
+}
+.doof-cinematic-explosion.boom {
+  animation: doof-boom 0.8s ease-out both;
+}
+@keyframes doof-boom {
+  0%   { opacity: 0; transform: scale(0.2); }
+  30%  { opacity: 1; transform: scale(1.5); filter: brightness(2) blur(0); }
+  100% { opacity: 0; transform: scale(3.0); filter: brightness(1) blur(8px); }
+}
+.doof-cinematic-perry {
+  position: absolute;
+  width: 90px;
+  height: auto;
+  top: 40%;
+  left: -120px;
+  z-index: 2;
+  filter: drop-shadow(0 0 14px rgba(94, 220, 255, 0.6));
+}
+.doof-cinematic-perry.zip {
+  animation: perry-zip 1.2s ease-in both;
+}
+@keyframes perry-zip {
+  from { left: -120px; transform: rotate(-8deg); }
+  to   { left: calc(100% + 60px); transform: rotate(8deg); }
+}
+body.doof-shake { animation: doof-shake 0.18s linear infinite; }
+@keyframes doof-shake {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(-3px, 2px) rotate(-0.4deg); }
+  50%  { transform: translate(2px, -1px) rotate(0.3deg); }
+  75%  { transform: translate(-2px, 1px) rotate(-0.2deg); }
+  100% { transform: translate(0, 0); }
+}
+
+/* If page is currently flipped, the shake should still feel right (not stack badly with rotate-180). */
+body.tristate-active.doof-shake { animation: doof-shake 0.18s linear infinite, none; }
+
+/* === Miles jackpot gold-coin shower === */
+.coin-shower {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 480;
+  overflow: hidden;
+  display: none;
+}
+.coin-shower.is-active { display: block; }
+.coin-shower-coin {
+  position: absolute;
+  font-size: 32px;
+  top: -40px;
+  filter: drop-shadow(0 2px 6px rgba(212, 168, 20, 0.5));
+}
+@keyframes coin-fall {
+  from { transform: translateY(-40px) rotate(0); }
+  to   { transform: translateY(110vh)  rotate(540deg); }
+}
+
+/* === Shield save mini-effect (used by detonation-saved) === */
+.shield-save {
+  position: fixed;
+  inset: 0;
+  z-index: 510;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.shield-save.is-active { display: flex; }
+.shield-save-icon {
+  font-size: 220px;
+  filter: drop-shadow(0 0 30px rgba(94, 154, 255, 0.95)) drop-shadow(0 0 60px rgba(94, 154, 255, 0.55));
+  animation: shield-pop 1.4s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes shield-pop {
+  0%   { opacity: 0; transform: scale(0.2) rotate(-30deg); }
+  60%  { opacity: 1; transform: scale(1.2) rotate(0); }
+  100% { opacity: 0; transform: scale(1.0) rotate(8deg); }
+}
+
+/* ===========================================
+   UNLOCK-EFFECT VISUALS
+   =========================================== */
+
+/* Beach mode: palm-tree borders + sand drift */
+body.unlock-beach {
+  background-image:
+    radial-gradient(circle at 5% 8%, rgba(245, 197, 24, 0.0) 0, transparent 10%);
+}
+body.unlock-beach::before,
+body.unlock-beach::after {
+  content: '🌴';
+  position: fixed;
+  font-size: 64px;
+  bottom: 4px;
+  z-index: 5;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
+}
+body.unlock-beach::before { left: 4px; transform: rotate(-8deg); }
+body.unlock-beach::after  { right: 4px; transform: rotate(8deg) scaleX(-1); }
+.beach-sand {
+  position: fixed;
+  pointer-events: none;
+  z-index: 4;
+  font-size: 8px;
+  color: rgba(245, 197, 24, 0.55);
+  animation: sand-drift linear infinite;
+}
+@keyframes sand-drift {
+  from { transform: translate(0, 0); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  to   { transform: translate(120vw, 8vh); opacity: 0; }
+}
+
+/* Sparkle on miles chip */
+body.unlock-sparkle .miles-chip,
+body.unlock-sparkle #miles-count {
+  position: relative;
+}
+body.unlock-sparkle #miles-count::after {
+  content: '✨';
+  position: absolute;
+  top: -10px;
+  right: -14px;
+  font-size: 14px;
+  animation: sparkle-twinkle 1.6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes sparkle-twinkle {
+  0%, 100% { opacity: 0.4; transform: scale(0.8) rotate(0); }
+  50%      { opacity: 1;   transform: scale(1.2) rotate(15deg); }
+}
+
+/* Confetti bursts */
+.confetti-piece {
+  position: fixed;
+  pointer-events: none;
+  z-index: 200;
+  font-size: 18px;
+  animation: confetti-fall 3.2s ease-in forwards;
+}
+@keyframes confetti-fall {
+  from { transform: translateY(-40px) rotate(0); opacity: 1; }
+  to   { transform: translateY(110vh) rotate(720deg); opacity: 0.2; }
+}
+
+/* Goose stampede V-formation */
+.goose-stampede {
+  position: fixed;
+  top: 30vh;
+  left: -200px;
+  z-index: 6;
+  pointer-events: none;
+  display: flex;
+  gap: 12px;
+  animation: goose-march 8s linear forwards;
+}
+@keyframes goose-march {
+  from { left: -200px; }
+  to   { left: 110vw; }
+}
+.goose-stampede img { width: 36px; height: 36px; }
+.goose-stampede-row { display: flex; gap: 18px; align-items: center; }
+
+/* Norm bot walkabout */
+.norm-bot {
+  position: fixed;
+  bottom: 4px;
+  left: -80px;
+  z-index: 7;
+  font-size: 36px;
+  animation: norm-walk 9s linear forwards;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+@keyframes norm-walk {
+  from { left: -80px; transform: translateY(0); }
+  10%  { transform: translateY(-3px); }
+  20%  { transform: translateY(0); }
+  30%  { transform: translateY(-3px); }
+  40%  { transform: translateY(0); }
+  to   { left: 110vw; transform: translateY(0); }
+}
+
+/* Plane rocket exhaust (cosmetic — just adds a trail to the tracker plane) */
+body.unlock-rocket .tracker-plane {
+  filter: drop-shadow(0 0 12px rgba(255, 140, 60, 0.85));
+}
+body.unlock-rocket .tracker-plane::after {
+  content: '🚀';
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  animation: rocket-shake 0.18s ease-in-out infinite alternate;
+}
+@keyframes rocket-shake {
+  from { transform: translate(0, -50%) scale(1.0); opacity: 0.85; }
+  to   { transform: translate(-2px, -50%) scale(1.15); opacity: 1; }
 }

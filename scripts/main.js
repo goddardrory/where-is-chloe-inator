@@ -6,6 +6,15 @@ import { start as startBgMusic, crossFadeTo as bgCrossFade, mute as muteBg, unmu
 import { isOwed as isResettiOwed, showScold as showResettiScold } from './resetti-scold.js';
 import { getBonusMiles, addMiles, awardAchievement, syncBonusMiles } from './nook-miles.js';
 import { initShop } from './shop.js';
+import { initSettingsGear } from './settings-gear.js';
+import { initSelfDestruct } from './self-destruct.js';
+import { initUnlockEffects } from './unlock-effects.js';
+import { applyTristate, removeTristate } from './cinematic-tristate.js';
+import { applyImmunityFromCount } from './cinematic-immunity.js';
+import { initLoan } from './loan.js';
+import { initSlots } from './slots.js';
+import { initTrees } from './trees.js';
+import { initDisco } from './disco.js';
 import { formatCountdown } from './countdown.js';
 import { initEasterEggs, spawnConfetti, whenInitialDoofClosed, spawnFlyBy } from './easter-eggs.js';
 import { initMessages } from './messages.js';
@@ -145,6 +154,26 @@ async function init() {
 
   // Nook's Cranny shop — wires the floating button + modal + sticker row
   initShop();
+
+  // Doofenshmirtz Self-Destruct-inator + personal unlock toggles.
+  initSettingsGear();
+  initSelfDestruct();
+  initUnlockEffects();
+
+  // Tom Nook Loan + slot machine (Casino Pass-gated) + Money Trees + Disco.
+  initLoan();
+  initSlots();
+  initTrees();
+  initDisco();
+
+  // React to server-state updates (active jackpot, immunity counter) so the
+  // upside-down banner and shield render consistently across family devices.
+  document.addEventListener('server-state', (e) => {
+    const s = e.detail || {};
+    if (s.activeJackpot === 'tristate') applyTristate();
+    else removeTristate();
+    if (Number.isFinite(s.immunity)) applyImmunityFromCount(s.immunity);
+  });
 
   // Wait for the Doof overlay to dismiss AND for Acedio to be loaded before
   // we start typing Tom Nook quotes — otherwise the first quote uses the

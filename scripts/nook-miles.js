@@ -75,6 +75,10 @@ export function wipeAllMiles(reason = 'wipe') {
 // Pull the shared total from the server and mirror it locally. Called on
 // init and every 60s in main.js so family members converge on the same
 // running count even if multiple devices add at once.
+//
+// Also dispatches `server-state` with the full payload so other modules
+// (immunity shield, tri-state, shop discount) can react without a duplicate
+// network request.
 export async function syncBonusMiles() {
   try {
     const res = await fetch(SYNC_URL, { headers: { Accept: 'application/json' } });
@@ -85,6 +89,7 @@ export async function syncBonusMiles() {
       setLocalMiles(data.total);
       if (data.total !== before) emitMilesChange(0, 'sync', data.total);
     }
+    document.dispatchEvent(new CustomEvent('server-state', { detail: data }));
   } catch { /* offline */ }
 }
 

@@ -17,9 +17,30 @@ const SOURCES = {
   lizardKing:  'assets/audio/lizard-king.mp3',
   dwightSlut:  'assets/audio/dwight-slut.mp3',
   twss:        'assets/audio/twss.mp3',
+
+  // === Shop interactivity + casino + Tom Nook loan ===
+  michaelBankruptcy:   'assets/audio/michael-bankruptcy.mp3',
+  michaelStayCalm:     'assets/audio/michael-stay-calm.mp3',
+  boardingChime:       'assets/audio/boarding-chime.mp3',
+  slotJackpot:         'assets/audio/slot-jackpot.mp3',
+  slotSpin:            'assets/audio/slot-spin.mp3',
+  slotLever:           'assets/audio/slot-lever.mp3',
+  slotLoss:            'assets/audio/slot-loss.mp3',
+  cursePerry:          'assets/audio/curse-perry.mp3',
+  dwightButtlicker:    'assets/audio/dwight-buttlicker.mp3',
+  dwightIdiot:         'assets/audio/dwight-idiot.mp3',
 };
 
 const cache = {};
+
+// Disco-mode global mute. When the Disco Ball is active, Harry Styles plays
+// (managed by disco.js outside this module) and ALL other site audio is
+// suppressed at the entry points below — bg-music, KK loop, easter-egg SFX,
+// animalese typing, synthesised fallbacks. Set via setDiscoActive() on enter
+// and cleared on exit.
+let discoActive = false;
+export function setDiscoActive(on) { discoActive = !!on; }
+export function isDiscoActive() { return discoActive; }
 let kkLoop = null;
 
 function load(key) {
@@ -111,6 +132,7 @@ export function warmUpAudio() {
 // is tuned around G3 so it reads as "raccoon shopkeeper" not "chipmunk".
 const PENTATONIC = [0, 2, 4, 7, 9];
 export function playNookAnimaleseChar(char) {
+  if (discoActive) return;
   if (!/[a-zA-Z]/.test(char)) return;
   const c = ac(); if (!c) return;
   // Resume if the context is suspended (autoplay policy)
@@ -150,6 +172,7 @@ export function playMiBombo() {
 
 // === Creeper hiss: build-up before the boom ===
 export function playCreeperHiss() {
+  if (discoActive) return null;
   const audio = load('creeperHiss');
   if (audio) {
     tryPlay(audio);
@@ -222,8 +245,51 @@ export function playDoofJingle() {
   playOnce();
 }
 
+// === Shop interactivity + casino helpers ===
+//
+// All of these use the same tryPlay/cache pattern as the rest of the file.
+// Site stays functional if the .mp3 file is missing — the play call no-ops.
+
+export function playMichaelBankruptcy()   { tryFile('michaelBankruptcy',   () => fallbackBeep(165, 0.7)); }
+export function playMichaelStayCalm()     { tryFile('michaelStayCalm',     () => fallbackBeep(330, 0.4)); }
+export function playBoardingChime()       { tryFile('boardingChime',       fallbackChime); }
+export function playSlotJackpot()         { tryFile('slotJackpot',         fallbackMelody); }
+export function playSlotLever()           { tryFile('slotLever',           () => fallbackBeep(140, 0.18)); }
+export function playSlotLoss()            { tryFile('slotLoss',            fallbackWomp); }
+export function playCursePerry()          { tryFile('cursePerry',          () => fallbackBeep(180, 0.4)); }
+export function playDwightButtlicker()    { tryFile('dwightButtlicker',    () => fallbackBeep(260, 0.25)); }
+export function playDwightIdiot()         { tryFile('dwightIdiot',         () => fallbackBeep(290, 0.25)); }
+
+// Returns the audio element so the caller can stop it (e.g. slot reels).
+export function playSlotSpin() {
+  const audio = load('slotSpin');
+  if (!audio) return null;
+  audio.loop = true;
+  audio.volume = 0.4;
+  tryPlay(audio);
+  return audio;
+}
+
+function tryFile(key, onFail) {
+  if (discoActive) return;
+  const audio = load(key);
+  if (!audio) { if (onFail) onFail(); return; }
+  tryPlay(audio, onFail);
+}
+
+function fallbackChime() {
+  const notes = [523.25, 659.25, 783.99];
+  notes.forEach((n, i) => setTimeout(() => fallbackBeep(n, 0.15), i * 100));
+}
+
+function fallbackWomp() {
+  const notes = [392, 349.23, 311.13];
+  notes.forEach((n, i) => setTimeout(() => fallbackBeep(n, 0.18), i * 130));
+}
+
 // === Explosion: white-noise burst ===
 export function playExplosion() {
+  if (discoActive) return;
   const audio = load('explosion');
   if (audio) { tryPlay(audio); return; }
   const c = ac(); if (!c) return;
@@ -262,6 +328,7 @@ export function stopKK() {
 }
 
 function tryPlay(audio, onFail) {
+  if (discoActive) return;
   // If a previous tryPlay is still tracking this audio (i.e. we're calling
   // again before the last one ended), release its duck count + listeners
   // first so a rapid replay doesn't leak.
@@ -313,6 +380,7 @@ function ac() {
 }
 
 function fallbackBeep(freq, duration) {
+  if (discoActive) return;
   const c = ac(); if (!c) return;
   if (c.state === 'suspended' && c.resume) c.resume().catch(() => {});
   const osc = c.createOscillator();

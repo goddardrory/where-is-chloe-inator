@@ -91,11 +91,11 @@
           </div>
           <div class="tracker-pin" data-end="to">
             <span class="tracker-pin-dot"></span>
-            <span class="tracker-pin-label" id="tracker-to">JFK</span>
+            <span class="tracker-pin-label" id="tracker-to">LHR</span>
           </div>
         </div>
         <div class="tracker-meta">
-          <div class="tracker-flight" id="tracker-flight">AS 0022</div>
+          <div class="tracker-flight" id="tracker-flight">VS 0106</div>
           <div class="tracker-detail" id="tracker-detail">Awaiting departure</div>
         </div>
         <a class="tracker-cta" id="tracker-cta" href="#" target="_blank" rel="noopener noreferrer">
@@ -109,7 +109,7 @@
     <section class="layover-section" id="layover-section" hidden aria-live="polite">
       <div class="layover-card">
         <div class="layover-banner">🥨 PRETZEL DAY 🥨</div>
-        <div class="layover-title">On layover at <span id="layover-airport">JFK</span></div>
+        <div class="layover-title">On layover at <span id="layover-airport">LHR</span></div>
         <div class="layover-timer" id="layover-timer">--:--:--</div>
         <div class="layover-sub">until next departure</div>
         <div class="layover-nook">"Resting safely, yes yes. Loan repayment unaffected, hooo."</div>
@@ -222,6 +222,18 @@
     <span class="shop-button-label">Shop</span>
   </button>
 
+  <!-- SETTINGS GEAR (floating, next to shop) -->
+  <button class="settings-button" id="settings-button" type="button" aria-label="Open settings" title="Personal toggles">
+    <span class="settings-button-emoji">⚙️</span>
+  </button>
+
+  <!-- SELF-DESTRUCT BUTTON (floating bottom-right, only armed when owned) -->
+  <button class="doof-button-fab" id="doof-button" type="button" aria-label="Self-Destruct-inator" title="Press at your own risk" disabled>
+    <span class="doof-button-emoji">🟥</span>
+    <span class="doof-button-label">SELF-DESTRUCT</span>
+    <span class="doof-button-count" id="doof-button-count" hidden></span>
+  </button>
+
   <!-- SHOP MODAL -->
   <div class="shop-overlay" id="shop-overlay" role="dialog" aria-label="Nook's Cranny">
     <div class="shop-content">
@@ -234,6 +246,28 @@
       <div class="shop-items" id="shop-items"></div>
       <p class="shop-note">All purchases pool to the family — every device sees the same collection, hm-hmm.</p>
     </div>
+  </div>
+
+  <!-- SETTINGS MODAL -->
+  <div class="settings-overlay" id="settings-overlay" role="dialog" aria-label="Personal toggles">
+    <div class="settings-content">
+      <button class="settings-close" id="settings-close" type="button" aria-label="Close">×</button>
+      <div class="settings-header">
+        <div class="settings-eyebrow">PERSONAL UNLOCKS</div>
+        <h2 class="settings-title">⚙️ Your Toggles</h2>
+        <p class="settings-sub">Earned from the Self-Destruct-inator. Stored on this device only.</p>
+      </div>
+      <div class="settings-list" id="settings-list"></div>
+      <p class="settings-note">Family Immunity / Tri-State / shared bonuses are server-wide and not toggled here.</p>
+    </div>
+  </div>
+
+  <!-- IMMUNITY SHIELD (floating, server-state-driven) -->
+  <div class="immunity-shield" id="immunity-shield" hidden aria-label="Family Immunity Token active" title="Next miles wipe will be absorbed">🛡️</div>
+
+  <!-- TRISTATE BANNER (server-state-driven, only visible when active) -->
+  <div class="tristate-banner" id="tristate-banner" hidden>
+    <span class="tristate-banner-text">I HAVE TAKEN OVER THE TRI-STATE AREA!</span>
   </div>
 
   <!-- TOAST CONTAINER -->

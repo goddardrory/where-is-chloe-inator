@@ -8,11 +8,36 @@
 // device sees the same collection.
 
 import { showToast } from './toast.js';
+import { isEnabled } from './unlocks.js';
+import { handleStickerClick, playPurchaseSound } from './shop-interactivity.js';
+import { openLoanFlow } from './loan.js';
+import { openCasino } from './slots.js';
 
 const SHOP_URL = '/.netlify/functions/shop';
 const REFRESH_MS = 60_000;
 
-let catalog = {};
+// Local fallback catalog (mirrors the server-side CATALOG in shop.js function).
+// Lets the modal render even before the first server response — and for local
+// preview when no Netlify Function backend is available. The server is
+// authoritative for prices when actually buying.
+const FALLBACK_CATALOG = {
+  'pretzel-banner':  { name: 'Pretzel Day Banner',     emoji: '🥨', price: 150,  blurb: 'A reminder that Pretzel Day is the best day of the year.' },
+  'beet-sticker':    { name: 'Schrute Beet Sticker',   emoji: '🌽', price: 200,  blurb: "Mose's idea. Identity-theft-deterrent." },
+  'fedora':          { name: "Perry's Spare Fedora",   emoji: '🎩', price: 300,  blurb: 'Mysteriously appeared. Major Monogram approved.' },
+  'boss-mug':        { name: "World's Best Boss Mug",  emoji: '🏆', price: 350,  blurb: 'Self-awarded. Quite emphatic about it.' },
+  'schrute-bucks':   { name: 'Schrute Bucks',          emoji: '🪙', price: 400,  blurb: 'Worth roughly 1/100th of a regular Bell, hooo.' },
+  'kk-vinyl':        { name: 'KK Slider Vinyl',        emoji: '🎸', price: 600,  blurb: 'A signed mixtape. Catch a smooth ride.' },
+  'goose-hat':       { name: 'Goose Sun Hat',          emoji: '🧢', price: 500,  blurb: 'For the rogue goose. Looks insufferably good.' },
+  'doof-lab-pass':   { name: 'Doof Evil Inc Lab Pass', emoji: '🧪', price: 800,  blurb: 'Backstage access. Not affiliated with Tri-State Area sovereignty.' },
+  'nook-certificate':{ name: "Tom Nook Loan Certificate", emoji: '📜', price: 1000, blurb: 'Hooo! Pre-approved. 19.99% APR after promotional period, yes yes.' },
+  'dodo-pin':        { name: 'Dodo Airlines Pin',      emoji: '🛬', price: 1200, blurb: "Dood. Souvenir from Wilbur and Orville's frequent-flyer program." },
+  'doof-button':     { name: 'Self-Destruct-inator',   emoji: '🟥', price: 750,  blurb: 'A big shiny red button. PROBABLY does what you think. Curse you, Perry the Platypus!' },
+  'casino-pass':     { name: "Tom Nook's Cabaret Pass", emoji: '🎰', price: 600,  blurb: 'Hooo, the spinning, the spinning! Unlocks the family slot machine. House edge generous. Yes yes.' },
+  'tree-sapling':    { name: 'Money Tree Sapling',     emoji: '🌱', price: 500,  blurb: 'Plant anywhere. Grows in 1 hour. Bears Bell-bags every 1 hour after that. Stackable, hooo!' },
+  'disco-ball':      { name: 'Disco Ball',              emoji: '🪩', price: 700,  blurb: 'Click to dim the lights and let Harry take over. Hooo, the rhythm, yes yes!' },
+};
+
+let catalog = { ...FALLBACK_CATALOG };
 let inventory = [];
 
 export function initShop() {
@@ -29,6 +54,10 @@ export function initShop() {
     });
   }
 
+  // Allow other modules (e.g. self-destruct) to request a refresh after
+  // mutating shared state.
+  document.addEventListener('shop-refresh-requested', () => refreshShop());
+
   refreshShop();
   setInterval(refreshShop, REFRESH_MS);
 }
@@ -38,8 +67,19 @@ async function refreshShop() {
     const res = await fetch(SHOP_URL, { headers: { Accept: 'application/json' } });
     if (!res.ok) return;
     const data = await res.json();
-    if (data.catalog)   catalog   = data.catalog;
-    if (data.inventory) inventory = data.inventory;
+    if (data.catalog) {
+      catalog = data.catalog;
+      document.dispatchEvent(new CustomEvent('shop-catalog', {
+        detail: { catalog },
+      }));
+    }
+    if (data.inventory) {
+      inventory = data.inventory;
+      // Broadcast so modules like self-destruct can react to inventory changes.
+      document.dispatchEvent(new CustomEvent('inventory-change', {
+        detail: { inventory },
+      }));
+    }
     renderStickerRow();
     if (isOpen()) renderShopGrid();
   } catch { /* offline */ }
@@ -135,10 +175,12 @@ function renderShopGrid() {
 
 async function buyItem(itemId, item) {
   try {
+    const body = { itemId };
+    if (isEnabled('schrute-bucks')) body.discountPct = 10;
     const res = await fetch(SHOP_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ itemId }),
+      body: JSON.stringify(body),
     });
     if (!res.ok) {
       let msg = 'Purchase failed';
@@ -147,7 +189,12 @@ async function buyItem(itemId, item) {
       return;
     }
     const data = await res.json();
-    if (data.inventory) inventory = data.inventory;
+    if (data.inventory) {
+      inventory = data.inventory;
+      document.dispatchEvent(new CustomEvent('inventory-change', {
+        detail: { inventory },
+      }));
+    }
     if (Number.isFinite(data.miles)) {
       // Tell main.js the shared total has changed so the chip updates.
       try { localStorage.setItem('whereischloe.bonusMiles', String(data.miles)); } catch {}
@@ -155,6 +202,7 @@ async function buyItem(itemId, item) {
         detail: { delta: -item.price, reason: `shop:${itemId}`, total: data.miles },
       }));
     }
+    playPurchaseSound(itemId);
     showToast(`✨ Acquired ${item.name}!`, 'success', 4500);
     renderStickerRow();
     if (isOpen()) renderShopGrid();
@@ -163,19 +211,62 @@ async function buyItem(itemId, item) {
   }
 }
 
+// Sticker IDs that are NOT shown in the row (handled elsewhere in the UI).
+const STICKER_HIDDEN = new Set(['doof-button']);
+
 function renderStickerRow() {
   const row = document.getElementById('shop-stickers');
   if (!row) return;
   row.replaceChildren();
+
+  // Dedupe by item id with a count — multiple copies show as one sticker
+  // with a small ×N badge.
+  const counts = new Map();
   for (const owned of inventory) {
-    const item = catalog[owned.id];
+    if (!owned || STICKER_HIDDEN.has(owned.id)) continue;
+    counts.set(owned.id, (counts.get(owned.id) || 0) + 1);
+  }
+
+  let i = 0;
+  for (const [id, count] of counts.entries()) {
+    const item = catalog[id];
     if (!item) continue;
-    const s = document.createElement('div');
+    const s = document.createElement('button');
+    s.type = 'button';
     s.className = 'shop-sticker';
-    s.title = item.name;
-    s.textContent = item.emoji;
+    s.dataset.itemId = id;
+    s.title = `${item.name} — click to use`;
+    // Stagger the wiggle so all stickers don't sync.
+    s.style.animationDelay = `${(i % 6) * 1.7}s`;
+    i++;
+
+    const emoji = document.createElement('span');
+    emoji.className = 'shop-sticker-emoji';
+    emoji.textContent = item.emoji;
+    s.appendChild(emoji);
+
+    if (count > 1) {
+      const badge = document.createElement('span');
+      badge.className = 'shop-sticker-count';
+      badge.textContent = `×${count}`;
+      s.appendChild(badge);
+    }
+
+    s.addEventListener('click', () => onStickerClick(id));
     row.appendChild(s);
   }
+}
+
+function onStickerClick(itemId) {
+  if (itemId === 'nook-certificate') {
+    openLoanFlow(catalog, inventory);
+    return;
+  }
+  if (itemId === 'casino-pass') {
+    openCasino();
+    return;
+  }
+  handleStickerClick(itemId);
 }
 
 // Called when the family wipes miles (bombing). Refresh inventory + UI;
