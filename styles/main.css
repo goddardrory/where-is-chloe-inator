@@ -1709,6 +1709,12 @@ body.konami { cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org
   display: inline-block;
 }
 
+/* The HTML `hidden` attribute is supposed to enforce display:none, but loses
+   specificity to any rule that sets an explicit `display:` (e.g. floating
+   buttons that use display:flex). This override pins the attribute as
+   authoritative across the site. */
+[hidden] { display: none !important; }
+
 /* === Visually-hidden helper === */
 .sr-only {
   position: absolute;
