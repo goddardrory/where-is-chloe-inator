@@ -2259,6 +2259,54 @@ body.is-planting::after {
 .casino-button:hover { transform: translateY(-2px) rotate(-6deg); }
 .casino-button:active { transform: translateY(1px); }
 
+/* === MOBILE TOOLBAR ===
+ * Phones don't have room for two vertical button stacks. Below 600px wide
+ * we collapse all floating buttons into one row at the bottom of the
+ * viewport, evenly spaced with explicit left/right anchors so no two
+ * buttons can overlap. Page content gets bottom padding so the toolbar
+ * doesn't cover the message wall, sticker row, etc. */
+@media (max-width: 600px) {
+  body {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  }
+  .shop-stickers {
+    margin-bottom: 8px;
+  }
+  /* Left side of the toolbar — shop, settings, casino */
+  .shop-button {
+    left: 8px;
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    padding: 8px 12px 8px 10px;
+  }
+  .shop-button-label { display: none; }     /* icon-only on mobile */
+  .settings-button {
+    left: 60px;
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    width: 44px;
+    height: 44px;
+  }
+  .casino-button {
+    left: 112px;
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  }
+  /* Right side — doof FAB (icon-only) and audio control (horizontal pair) */
+  .doof-button-fab {
+    right: 108px;
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    padding: 8px 10px;
+    gap: 4px;
+  }
+  .doof-button-label { display: none; }     /* shrink to 🟥 + ×N badge only */
+  .audio-control {
+    right: 8px;
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    flex-direction: row;
+    gap: 6px;
+  }
+  /* Tom Nook debt badge sits at top-right, away from the toolbar. */
+  .loan-debt-badge { top: 10px; right: 10px; }
+}
+
 .slots-overlay {
   position: fixed;
   inset: 0;

@@ -50,6 +50,12 @@ function load(key) {
     // 'auto' so iOS can buffer ahead — 'none' meant playback was blocked
     // until the file loaded, which compounded the unlock issue.
     audio.preload = 'auto';
+    // Born silent. iOS Safari can ignore an `audio.muted = true` set
+    // immediately before play() (the property change is processed async),
+    // leaking audio for ~50ms while we try to "warm up" the element.
+    // Setting volume=0 at construction guarantees no audible playback
+    // until tryPlay() explicitly restores it.
+    audio.volume = 0;
     cache[key] = audio;
     return audio;
   } catch {
@@ -125,19 +131,14 @@ export function warmUpAudio() {
 function warmOne(key) {
   const audio = load(key);
   if (!audio) return;
-  const wasMuted = audio.muted;
-  const wasVol   = audio.volume;
-  audio.muted = true;
-  audio.volume = 0;
-  const restore = () => { audio.muted = wasMuted; audio.volume = wasVol; };
+  // Element is already born at volume 0, so play()+pause() is silent. No
+  // mute toggling, no restore needed — tryPlay() sets volume=1 when actual
+  // playback is requested.
   const p = audio.play();
   if (p && p.then) {
     p.then(() => {
       try { audio.pause(); audio.currentTime = 0; } catch {}
-      restore();
-    }).catch(restore);
-  } else {
-    restore();
+    }).catch(() => {});
   }
 }
 
@@ -345,6 +346,10 @@ export function stopKK() {
 
 function tryPlay(audio, onFail) {
   if (discoActive) return;
+  // Restore audible volume — load() births elements at volume 0 so warmup
+  // can't leak. Only restore if still at 0; callers that set their own
+  // volume (e.g. KK loop at 0.25) keep their setting.
+  if (audio.volume === 0) audio.volume = 1;
   // If a previous tryPlay is still tracking this audio (i.e. we're calling
   // again before the last one ended), release its duck count + listeners
   // first so a rapid replay doesn't leak.

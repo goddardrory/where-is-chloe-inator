@@ -173,7 +173,18 @@ export function resumeActive() {
 export function duck() {
   if (silenced || muted) return;
   duckCount += 1;
-  if (activeKey) fadeTo(tracks[activeKey], DUCK_VOL, FADE_DOWN_MS);
+  // Instant cut to silence — no 180ms fade. The fade left bg audibly
+  // ramping down through the first beat of every short SFX (e.g. the
+  // rogue-duck quack), defeating the purpose of ducking. Cleared
+  // listeners ensure no stale fade-up sneaks back in.
+  if (activeKey) {
+    const t = tracks[activeKey];
+    if (t) {
+      const timer = fadeTimers.get(t);
+      if (timer) { clearInterval(timer); fadeTimers.delete(t); }
+      try { t.volume = 0; } catch {}
+    }
+  }
 }
 
 export function unduck() {

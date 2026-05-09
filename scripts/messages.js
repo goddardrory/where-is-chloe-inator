@@ -1,6 +1,7 @@
 import { showToast } from './toast.js';
 import { formatRelative } from './countdown.js';
 import { addMiles, awardAchievement } from './nook-miles.js';
+import { LEGACY_MESSAGES } from '../data/legacy-messages.js';
 
 const FEED_URL = '/.netlify/functions/get-messages';
 const REFRESH_MS = 60_000;
@@ -73,14 +74,28 @@ async function onSubmit(e) {
 async function refreshFeed() {
   const feed = document.getElementById('messages-feed');
   if (!feed) return;
+  let current = [];
   try {
     const res = await fetch(FEED_URL, { headers: { Accept: 'application/json' } });
-    if (!res.ok) return; // silently fail — keeps the page usable in local/dev too
-    const data = await res.json();
-    renderFeed(feed, data.messages || []);
-  } catch {
-    /* offline or server function not configured — keep current feed */
+    if (res.ok) {
+      const data = await res.json();
+      current = Array.isArray(data.messages) ? data.messages : [];
+    }
+  } catch { /* offline or server function not configured */ }
+
+  // Merge current submissions with the v1-account legacy messages, dedupe by
+  // id (in case anything was re-submitted post-migration), and sort newest
+  // first by createdAt.
+  const byId = new Map();
+  for (const m of [...current, ...LEGACY_MESSAGES]) {
+    if (m && m.id) byId.set(m.id, m);
   }
+  const merged = [...byId.values()].sort((a, b) => {
+    const ta = Date.parse(a.createdAt) || 0;
+    const tb = Date.parse(b.createdAt) || 0;
+    return tb - ta;
+  });
+  renderFeed(feed, merged);
 }
 
 function renderFeed(feed, messages) {
