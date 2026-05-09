@@ -899,7 +899,25 @@ input, textarea, button {
 
 /* === NOOK'S CRANNY SHOP === */
 
-/* Floating shop button — bottom-left so it doesn't fight the audio controls */
+/* === FLOATING-BUTTON DOCKS ===
+ * The bottom-left and bottom-right corners each host a vertical stack of
+ * floating buttons. Each button sets its own `bottom:` value to claim a slot
+ * in the stack so adjacent buttons don't overlap on small screens.
+ *
+ * Left dock (bottom→up):
+ *   16  shop      (always visible)
+ *   74  settings  (always visible)
+ *  132  casino    (visible only when family owns Casino Pass)
+ *
+ * Right dock (bottom→up):
+ *   16  audio control (always visible)
+ *  124  doof FAB      (visible only when family owns ≥1 Self-Destruct-inator)
+ *
+ * One layout for every viewport — the prior @media overrides shifted things
+ * and caused stacking conflicts on iPhones.
+ */
+
+/* Floating shop button — bottom-left, lowest slot in the left dock */
 .shop-button {
   position: fixed;
   left: 16px;
@@ -1730,11 +1748,11 @@ body.konami { cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org
    DOOFENSHMIRTZ SELF-DESTRUCT FEATURE
    =========================================== */
 
-/* === Settings gear (next to shop button) === */
+/* === Settings gear (left dock, slot 2) === */
 .settings-button {
   position: fixed;
-  left: 134px;             /* sits right of the shop button */
-  bottom: 16px;
+  left: 16px;
+  bottom: 74px;            /* stacked above the shop button */
   width: 44px;
   height: 44px;
   display: flex;
@@ -1752,15 +1770,11 @@ body.konami { cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org
 .settings-button:hover { transform: rotate(60deg) translateY(-1px); }
 .settings-button:active { transform: rotate(30deg) translateY(1px); }
 
-@media (max-width: 540px) {
-  .settings-button { left: auto; right: 16px; bottom: 78px; }
-}
-
-/* === Self-destruct FAB (bottom-right) === */
+/* === Self-destruct FAB (right dock, slot 2 — above audio control) === */
 .doof-button-fab {
   position: fixed;
   right: 16px;
-  bottom: 16px;
+  bottom: 124px;             /* clears the audio control stack below */
   display: none;             /* hidden until at least one is owned */
   align-items: center;
   gap: 8px;
@@ -2210,11 +2224,11 @@ body.is-planting::after {
   }
 }
 
-/* === Slot machine — Tom Nook's Cabaret === */
+/* === Slot machine — Tom Nook's Cabaret (left dock, slot 3) === */
 .casino-button {
   position: fixed;
-  left: 188px;
-  bottom: 16px;
+  left: 16px;
+  bottom: 132px;             /* stacked above shop+settings */
   width: 44px;
   height: 44px;
   display: flex;
@@ -2231,9 +2245,6 @@ body.is-planting::after {
 }
 .casino-button:hover { transform: translateY(-2px) rotate(-6deg); }
 .casino-button:active { transform: translateY(1px); }
-@media (max-width: 540px) {
-  .casino-button { left: auto; right: 78px; bottom: 78px; }
-}
 
 .slots-overlay {
   position: fixed;

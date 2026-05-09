@@ -105,23 +105,39 @@ export function playBomboclaat() {
 // plays succeed on iOS without needing another tap. Heavy tracks
 // (kk-airline) are skipped — the bg-music module handles those itself.
 let warmedUpAudio = false;
-const WARMUP_SKIP = new Set(['kkAirline']);
+const WARMUP_SKIP = new Set(['kkAirline', 'harryStyles']);
 export function warmUpAudio() {
   if (warmedUpAudio) return;
   warmedUpAudio = true;
+  // Stagger warmups by ~30ms each so 22 simultaneous play() calls don't
+  // overwhelm the browser AND so any browser that briefly leaks audio before
+  // muted/volume=0 takes effect doesn't produce a chorus of blips. We also
+  // set volume=0 because muted=true alone is honored asynchronously on some
+  // browsers (notably mobile Safari).
+  let i = 0;
   for (const key of Object.keys(SOURCES)) {
     if (WARMUP_SKIP.has(key)) continue;
-    const audio = load(key);
-    if (!audio) continue;
-    const wasMuted = audio.muted;
-    audio.muted = true;
-    const p = audio.play();
-    if (p && p.then) {
-      p.then(() => {
-        try { audio.pause(); audio.currentTime = 0; } catch {}
-        audio.muted = wasMuted;
-      }).catch(() => { audio.muted = wasMuted; });
-    }
+    const delay = i++ * 35;
+    setTimeout(() => warmOne(key), delay);
+  }
+}
+
+function warmOne(key) {
+  const audio = load(key);
+  if (!audio) return;
+  const wasMuted = audio.muted;
+  const wasVol   = audio.volume;
+  audio.muted = true;
+  audio.volume = 0;
+  const restore = () => { audio.muted = wasMuted; audio.volume = wasVol; };
+  const p = audio.play();
+  if (p && p.then) {
+    p.then(() => {
+      try { audio.pause(); audio.currentTime = 0; } catch {}
+      restore();
+    }).catch(restore);
+  } else {
+    restore();
   }
 }
 

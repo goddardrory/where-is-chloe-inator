@@ -20,7 +20,7 @@ const SOURCES = {
 };
 
 const NORMAL_VOL   = 0.32;
-const DUCK_VOL     = 0.06;
+const DUCK_VOL     = 0;       // fully silence bg during SFX (was 0.06)
 const FADE_DOWN_MS = 180;
 const FADE_UP_MS   = 900;
 const CROSSFADE_MS = 1500;
