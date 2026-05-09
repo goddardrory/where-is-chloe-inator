@@ -39,6 +39,11 @@ const FALLBACK_CATALOG = {
 
 let catalog = { ...FALLBACK_CATALOG };
 let inventory = [];
+// Server-authoritative family wallet snapshot. The hero miles chip combines
+// this WITH flight-derived base miles, but shop purchases only debit the
+// family wallet — so we MUST check this value, not the chip total. Updated
+// from /shop GET responses + miles-change events.
+let serverMiles = 0;
 
 export function initShop() {
   const btn = document.getElementById('shop-button');
@@ -75,15 +80,26 @@ async function refreshShop() {
     }
     if (data.inventory) {
       inventory = data.inventory;
-      // Broadcast so modules like self-destruct can react to inventory changes.
       document.dispatchEvent(new CustomEvent('inventory-change', {
         detail: { inventory },
       }));
     }
+    if (Number.isFinite(data.miles)) serverMiles = data.miles;
     renderStickerRow();
     if (isOpen()) renderShopGrid();
   } catch { /* offline */ }
 }
+
+// Other modules (slots, tree-harvest, self-destruct) update the family wallet
+// server-side — listen for miles-change events to keep our local snapshot
+// fresh between the 60s polls.
+document.addEventListener('miles-change', (e) => {
+  const total = e.detail && e.detail.total;
+  if (Number.isFinite(total)) {
+    serverMiles = total;
+    if (isOpen()) renderShopGrid();
+  }
+});
 
 function isOpen() {
   const overlay = document.getElementById('shop-overlay');
@@ -103,13 +119,24 @@ function closeShop() {
   if (overlay) overlay.classList.remove('is-open');
 }
 
-function getMilesElement() {
-  // Read miles directly from the live chip — keeps us in sync with the
-  // total displayed (which is shared bonus + flight base).
-  const chip = document.getElementById('miles-count');
-  if (!chip) return 0;
-  const n = parseInt(chip.textContent, 10);
-  return Number.isFinite(n) ? n : 0;
+// Return the family wallet balance (the value purchases actually debit from).
+// MUST NOT use the hero miles chip — that adds flight-derived base miles which
+// purchases CANNOT spend, leading to false-positive enabled buy buttons.
+function getFamilyWallet() {
+  return Number.isFinite(serverMiles) ? serverMiles : 0;
+}
+
+// Effective price after the personal Schrute Bucks Membership discount + the
+// family-wide one-shot 24h discount. Server enforces these too — this just
+// keeps the displayed price + disabled-button check honest with what the
+// server will actually charge.
+function effectivePriceFor(item) {
+  let price = item.price;
+  if (isEnabled('schrute-bucks')) price = Math.round(item.price * 0.9);
+  // Family-wide 24h half-off honours the lower of the two.
+  // Note: client doesn't know `discountUntil` from /shop response, but the
+  // server response from a successful purchase reflects the actual charge.
+  return price;
 }
 
 function renderShopGrid() {
@@ -118,8 +145,8 @@ function renderShopGrid() {
   if (!grid) return;
   grid.replaceChildren();
 
-  const balance = getMilesElement();
-  if (balanceEl) balanceEl.textContent = `★ ${balance} miles`;
+  const balance = getFamilyWallet();
+  if (balanceEl) balanceEl.textContent = `★ ${balance.toLocaleString()} miles`;
 
   const ownedCounts = {};
   for (const owned of inventory) {
@@ -153,18 +180,30 @@ function renderShopGrid() {
       card.appendChild(ownedTag);
     }
 
+    const effective = effectivePriceFor(item);
     const price = document.createElement('div');
     price.className = 'shop-item-price';
-    price.textContent = `★ ${item.price}`;
+    if (effective < item.price) {
+      const orig = document.createElement('span');
+      orig.className = 'shop-item-price-orig';
+      orig.textContent = `★ ${item.price.toLocaleString()}`;
+      const disc = document.createElement('span');
+      disc.className = 'shop-item-price-disc';
+      disc.textContent = `★ ${effective.toLocaleString()}`;
+      price.appendChild(orig);
+      price.appendChild(disc);
+    } else {
+      price.textContent = `★ ${item.price.toLocaleString()}`;
+    }
     card.appendChild(price);
 
     const buy = document.createElement('button');
     buy.type = 'button';
     buy.className = 'shop-item-buy';
     buy.textContent = 'Buy';
-    if (balance < item.price) {
+    if (balance < effective) {
       buy.disabled = true;
-      buy.textContent = 'Not enough miles';
+      buy.textContent = `Need ★ ${(effective - balance).toLocaleString()} more`;
     }
     buy.addEventListener('click', () => buyItem(id, item));
     card.appendChild(buy);

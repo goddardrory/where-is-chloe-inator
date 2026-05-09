@@ -1,9 +1,21 @@
-// Tom Nook's Cabaret — slot machine client.
+// Tom Nook's Cabaret — slot machine client (3×3 grid, 8 paylines).
 //
-// 3 reels, server-authoritative spin. Bet from the shared family wallet.
-// Lever sprite to the right of the reels — click OR drag-down ≥ 60% triggers
-// a spin. Reels animate staggered (0.8s, 1.4s, 2.1s) before settling on the
-// server-returned symbols.
+// Layout:
+//   ┌──┬──┬──┐
+//   │ 0│ 1│ 2│   row 1
+//   ├──┼──┼──┤
+//   │ 3│ 4│ 5│   row 2
+//   ├──┼──┼──┤
+//   │ 6│ 7│ 8│   row 3
+//   └──┴──┴──┘   col0 col1 col2
+//
+// 8 paylines = 3 rows + 3 columns + 2 diagonals. Server rolls + evaluates;
+// client just animates and surfaces the result.
+//
+// Reel timing is tied to slot-spin.mp3 duration:
+//   - Column 0 stops at duration * 0.5
+//   - Column 1 stops at duration * 0.75
+//   - Column 2 stops when the audio ends (and we settle the result)
 
 import { showToast } from './toast.js';
 import {
@@ -16,10 +28,12 @@ const REEL_SYMBOLS = ['🍎', '🦋', '🐟', '🪙', '🌟', '🦝', '💎'];
 const BET_MIN = 25;
 const BET_MAX = 500;
 const BET_DEFAULT = 50;
+const FALLBACK_SPIN_MS = 4500;     // used if audio metadata is unavailable
 
 let bet = BET_DEFAULT;
 let spinInFlight = false;
 let spinAudioInstance = null;
+let walletSnapshot = 0;            // last-known family wallet (kept in sync via miles-change)
 
 export function initSlots() {
   ensureCasinoButton();
@@ -28,13 +42,23 @@ export function initSlots() {
     const inv = e.detail && e.detail.inventory;
     if (Array.isArray(inv)) updateCasinoButtonVisibility(inv);
   });
+  document.addEventListener('miles-change', (e) => {
+    const total = e.detail && e.detail.total;
+    if (Number.isFinite(total)) {
+      walletSnapshot = total;
+      const wEl = document.getElementById('slots-wallet');
+      if (wEl) wEl.textContent = `★ ${total.toLocaleString()}`;
+    }
+  });
 }
 
 export function openCasino() {
   const modal = document.getElementById('slots-overlay');
   if (!modal) return;
   modal.classList.add('is-open');
-  resetReels();
+  resetGrid();
+  hideStateOverlay();
+  refreshWalletDisplay();
 }
 
 function closeCasino() {
@@ -46,7 +70,12 @@ function closeCasino() {
   }
 }
 
-// === Casino entry button (next to ⚙️ Settings) ===
+function refreshWalletDisplay() {
+  const wEl = document.getElementById('slots-wallet');
+  if (wEl) wEl.textContent = `★ ${walletSnapshot.toLocaleString()}`;
+}
+
+// === Casino entry button (left dock, slot 3) ===
 
 function ensureCasinoButton() {
   if (document.getElementById('casino-button')) return;
@@ -108,24 +137,63 @@ function ensureSlotsModal() {
   header.appendChild(title);
   cabinet.appendChild(header);
 
-  // Reels + lever row
+  // Wallet display
+  const walletRow = document.createElement('div');
+  walletRow.className = 'slots-wallet-row';
+  walletRow.textContent = 'Family Wallet: ';
+  const walletNum = document.createElement('span');
+  walletNum.id = 'slots-wallet';
+  walletNum.className = 'slots-wallet';
+  walletNum.textContent = '★ 0';
+  walletRow.appendChild(walletNum);
+  cabinet.appendChild(walletRow);
+
+  // Reels (3x3 grid) + lever side-by-side
   const playArea = document.createElement('div');
   playArea.className = 'slots-play-area';
 
-  const reelsBox = document.createElement('div');
-  reelsBox.className = 'slots-reels';
-  for (let i = 0; i < 3; i++) {
-    const reel = document.createElement('div');
-    reel.className = 'slots-reel';
-    reel.id = `slots-reel-${i}`;
+  const gridWrap = document.createElement('div');
+  gridWrap.className = 'slots-grid-wrap';
+
+  const grid = document.createElement('div');
+  grid.className = 'slots-grid';
+  grid.id = 'slots-grid';
+  for (let i = 0; i < 9; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'slots-cell';
+    cell.id = `slots-cell-${i}`;
+    cell.dataset.idx = String(i);
     const inner = document.createElement('div');
-    inner.className = 'slots-reel-inner';
-    inner.id = `slots-reel-inner-${i}`;
+    inner.className = 'slots-cell-inner';
     inner.textContent = '❓';
-    reel.appendChild(inner);
-    reelsBox.appendChild(reel);
+    cell.appendChild(inner);
+    grid.appendChild(cell);
   }
-  playArea.appendChild(reelsBox);
+  gridWrap.appendChild(grid);
+
+  // SVG overlay drawn over the grid for highlighting winning lines.
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.id = 'slots-line-overlay';
+  svg.classList.add('slots-line-overlay');
+  svg.setAttribute('viewBox', '0 0 300 300');
+  svg.setAttribute('preserveAspectRatio', 'none');
+  gridWrap.appendChild(svg);
+
+  // In-modal state overlay (win/lose/insufficient communications)
+  const stateOverlay = document.createElement('div');
+  stateOverlay.id = 'slots-state-overlay';
+  stateOverlay.className = 'slots-state-overlay';
+  const stateTitle = document.createElement('div');
+  stateTitle.id = 'slots-state-title';
+  stateTitle.className = 'slots-state-title';
+  stateOverlay.appendChild(stateTitle);
+  const stateSub = document.createElement('div');
+  stateSub.id = 'slots-state-sub';
+  stateSub.className = 'slots-state-sub';
+  stateOverlay.appendChild(stateSub);
+  gridWrap.appendChild(stateOverlay);
+
+  playArea.appendChild(gridWrap);
 
   // Lever
   const leverBox = document.createElement('div');
@@ -147,13 +215,6 @@ function ensureSlotsModal() {
   playArea.appendChild(leverBox);
 
   cabinet.appendChild(playArea);
-
-  // Result line + balance
-  const result = document.createElement('div');
-  result.className = 'slots-result';
-  result.id = 'slots-result';
-  result.textContent = 'Place your bet, hooo';
-  cabinet.appendChild(result);
 
   // Bet controls
   const betRow = document.createElement('div');
@@ -196,22 +257,22 @@ function ensureSlotsModal() {
 
   cabinet.appendChild(betRow);
 
-  // Pay table reference
+  // Pay table reference (per-line multipliers)
   const paytable = document.createElement('details');
   paytable.className = 'slots-paytable';
   const summary = document.createElement('summary');
-  summary.textContent = 'Pay table — hm-hmm';
+  summary.textContent = 'Pay table — multiplier × bet, per winning line';
   paytable.appendChild(summary);
   const tbl = document.createElement('div');
   tbl.className = 'slots-paytable-grid';
   const ROWS = [
-    ['💎💎💎', '×100'],
-    ['🦝🦝🦝', '×40'],
-    ['🌟🌟🌟', '×20'],
-    ['🪙🪙🪙', '×10'],
-    ['🐟🐟🐟 / 🦋🦋🦋 / 🍎🍎🍎', '×4'],
-    ['💎💎 (any)', '×5'],
-    ['🦝🦝 (any)', '×2'],
+    ['💎💎💎', '×60'],
+    ['🦝🦝🦝', '×25'],
+    ['🌟🌟🌟', '×10'],
+    ['🪙🪙🪙', '×4'],
+    ['🐟🐟🐟 / 🦋🦋🦋 / 🍎🍎🍎', '×1'],
+    ['💎💎 (any 2 in line)', '×3'],
+    ['🦝🦝 (any 2 in line)', '×1'],
   ];
   for (const [combo, mult] of ROWS) {
     const c = document.createElement('div'); c.textContent = combo;
@@ -219,6 +280,10 @@ function ensureSlotsModal() {
     tbl.appendChild(c); tbl.appendChild(m);
   }
   paytable.appendChild(tbl);
+  const lineNote = document.createElement('div');
+  lineNote.className = 'slots-paytable-note';
+  lineNote.textContent = '8 paylines: 3 rows + 3 columns + 2 diagonals. Hits stack.';
+  paytable.appendChild(lineNote);
   cabinet.appendChild(paytable);
 
   overlay.appendChild(cabinet);
@@ -239,16 +304,48 @@ function setBet(v) {
   if (input) input.value = String(bet);
 }
 
-function resetReels() {
-  for (let i = 0; i < 3; i++) {
-    const inner = document.getElementById(`slots-reel-inner-${i}`);
-    if (inner) {
-      inner.textContent = '❓';
-      inner.classList.remove('is-spinning');
-    }
+function resetGrid() {
+  for (let i = 0; i < 9; i++) {
+    const cell = document.getElementById(`slots-cell-${i}`);
+    if (!cell) continue;
+    cell.classList.remove('is-winning', 'is-spinning');
+    const inner = cell.querySelector('.slots-cell-inner');
+    if (inner) inner.textContent = '❓';
   }
-  const result = document.getElementById('slots-result');
-  if (result) result.textContent = 'Place your bet, hooo';
+  clearLineOverlay();
+}
+
+function clearLineOverlay() {
+  const svg = document.getElementById('slots-line-overlay');
+  if (svg) svg.replaceChildren();
+}
+
+// === In-modal state overlay (win / lose / insufficient) ===
+
+function showStateOverlay(kind, title, sub) {
+  const o = document.getElementById('slots-state-overlay');
+  if (!o) return;
+  o.classList.remove('is-win', 'is-loss', 'is-insufficient', 'is-error');
+  o.classList.add('is-active', 'is-' + kind);
+  const t = document.getElementById('slots-state-title');
+  const s = document.getElementById('slots-state-sub');
+  if (t) t.textContent = title;
+  if (s) s.textContent = sub || '';
+}
+
+function hideStateOverlay() {
+  const o = document.getElementById('slots-state-overlay');
+  if (o) {
+    o.classList.remove('is-active', 'is-win', 'is-loss', 'is-insufficient', 'is-error');
+  }
+}
+
+function showInsufficientState(bet, balance) {
+  showStateOverlay(
+    'insufficient',
+    '🚫 Insufficient miles',
+    `Bet ★ ${bet.toLocaleString()} but family wallet only has ★ ${balance.toLocaleString()}. Earn miles or lower the bet, hooo.`,
+  );
 }
 
 // === Lever drag ===
@@ -292,13 +389,22 @@ function attachLeverDrag(lever, handle) {
 
 async function spin() {
   if (spinInFlight) return;
+
+  // Pre-flight wallet check (UX only — server is authoritative).
+  if (walletSnapshot < bet) {
+    showInsufficientState(bet, walletSnapshot);
+    return;
+  }
+
   spinInFlight = true;
-
   setLeverEnabled(false);
-  startReelSpinAnimation();
-  try { playSlotLever(); } catch {}
-  setTimeout(() => { spinAudioInstance = playSlotSpin(); }, 280);
+  hideStateOverlay();
+  resetGrid();
 
+  try { playSlotLever(); } catch {}
+
+  // Fire the server request first so we have the result by the time the
+  // animation needs to settle. Keeps reel-stop timing deterministic.
   let res, data;
   try {
     res = await fetch(URL, {
@@ -308,40 +414,82 @@ async function spin() {
     });
     data = await res.json();
   } catch {
-    finishWithError('Network hiccup');
-    return;
-  }
-  if (!res.ok) {
-    finishWithError(data && data.error ? data.error : 'Spin failed');
+    finishWithError('Network hiccup. Try again, hooo.');
     return;
   }
 
-  // Settle reels staggered.
-  const symbols = data.symbols.map((s) => s.emoji);
-  const STOPS_MS = [800, 1400, 2100];
-  for (let i = 0; i < 3; i++) {
-    const inner = document.getElementById(`slots-reel-inner-${i}`);
-    setTimeout(() => {
-      if (inner) {
-        inner.textContent = symbols[i];
-        inner.classList.remove('is-spinning');
-      }
-      if (i === 2) settleResult(data);
-    }, STOPS_MS[i]);
+  if (!res.ok) {
+    if (res.status === 402) {
+      const bal = (data && data.balance) || walletSnapshot;
+      const b   = (data && data.bet) || bet;
+      showInsufficientState(b, bal);
+      setLeverEnabled(true);
+      spinInFlight = false;
+      return;
+    }
+    finishWithError((data && data.error) || 'Spin failed');
+    return;
   }
+
+  // Now start the audio + reel animation. The audio's duration determines
+  // when each column stops.
+  startReelSpinAnimation();
+  spinAudioInstance = playSlotSpin();
+
+  let totalSpinMs = FALLBACK_SPIN_MS;
+  if (spinAudioInstance) {
+    if (Number.isFinite(spinAudioInstance.duration) && spinAudioInstance.duration > 0) {
+      totalSpinMs = spinAudioInstance.duration * 1000;
+    } else {
+      // Wait briefly for metadata to load.
+      await new Promise((resolve) => {
+        const t = setTimeout(resolve, 800);
+        spinAudioInstance.addEventListener('loadedmetadata', () => {
+          clearTimeout(t);
+          resolve();
+        }, { once: true });
+      });
+      if (spinAudioInstance.duration > 0) totalSpinMs = spinAudioInstance.duration * 1000;
+    }
+  }
+
+  // Cell symbols from server (length-9 array of {emoji,id}).
+  const symbols = data.cells.map((s) => s.emoji);
+
+  // Stagger column stops: col0 at 50%, col1 at 75%, col2 at 100% of duration.
+  const STOPS = [totalSpinMs * 0.5, totalSpinMs * 0.75, totalSpinMs];
+
+  setTimeout(() => stopColumn(0, symbols), STOPS[0]);
+  setTimeout(() => stopColumn(1, symbols), STOPS[1]);
+  setTimeout(() => {
+    stopColumn(2, symbols);
+    settleResult(data);
+  }, STOPS[2]);
 }
 
 function startReelSpinAnimation() {
-  for (let i = 0; i < 3; i++) {
-    const inner = document.getElementById(`slots-reel-inner-${i}`);
+  for (let i = 0; i < 9; i++) {
+    const cell = document.getElementById(`slots-cell-${i}`);
+    if (!cell) continue;
+    cell.classList.add('is-spinning');
+    const inner = cell.querySelector('.slots-cell-inner');
     if (inner) {
-      inner.classList.add('is-spinning');
-      // Cycle a random face every ~80ms during spin for visual flutter.
       const flutter = setInterval(() => {
-        if (!inner.classList.contains('is-spinning')) { clearInterval(flutter); return; }
+        if (!cell.classList.contains('is-spinning')) { clearInterval(flutter); return; }
         inner.textContent = REEL_SYMBOLS[Math.floor(Math.random() * REEL_SYMBOLS.length)];
       }, 80);
     }
+  }
+}
+
+// Stop the 3 cells in a given column (col=0 → cells 0,3,6 etc.)
+function stopColumn(col, symbols) {
+  for (const idx of [col, col + 3, col + 6]) {
+    const cell = document.getElementById(`slots-cell-${idx}`);
+    if (!cell) continue;
+    cell.classList.remove('is-spinning');
+    const inner = cell.querySelector('.slots-cell-inner');
+    if (inner) inner.textContent = symbols[idx];
   }
 }
 
@@ -351,17 +499,10 @@ function settleResult(data) {
     spinAudioInstance = null;
   }
 
-  const result = document.getElementById('slots-result');
-  if (data.payout > 0) {
-    if (result) result.textContent = `🎉 ×${data.multiplier}  —  +${data.payout} miles  (net ${formatNet(data.net)})`;
-    try { playSlotJackpot(); } catch {}
-    showToast(`🎰 WIN! +${data.payout} miles`, 'success', 4000);
-  } else {
-    if (result) result.textContent = `🪙 No match. -${data.bet} miles. Tom Nook is unmoved.`;
-    try { playSlotLoss(); } catch {}
-    showToast(`🎰 Lost ${data.bet} miles`, 'info', 3000);
-  }
+  if (Number.isFinite(data.balance)) walletSnapshot = data.balance;
+  refreshWalletDisplay();
 
+  // Sync local mirror + tell the rest of the app.
   if (Number.isFinite(data.balance)) {
     try { localStorage.setItem('whereischloe.bonusMiles', String(data.balance)); } catch {}
     document.dispatchEvent(new CustomEvent('miles-change', {
@@ -369,20 +510,67 @@ function settleResult(data) {
     }));
   }
 
+  if (data.totalPayout > 0) {
+    highlightWinningLines(data.wins);
+    const linesText = data.wins.length === 1
+      ? data.wins[0].label
+      : `${data.wins.length} winning lines`;
+    showStateOverlay(
+      'win',
+      `🎉 +${data.totalPayout.toLocaleString()} miles`,
+      `${linesText}. Net ${formatNet(data.net)} miles.`,
+    );
+    try { playSlotJackpot(); } catch {}
+  } else {
+    showStateOverlay(
+      'loss',
+      `🪙 No match`,
+      `−${data.bet.toLocaleString()} miles. Tom Nook is unmoved, hm-hmm.`,
+    );
+    try { playSlotLoss(); } catch {}
+  }
+
   setLeverEnabled(true);
   spinInFlight = false;
 }
 
+function highlightWinningLines(wins) {
+  // Pulse each cell in any winning line.
+  for (const w of wins) {
+    for (const idx of w.cells) {
+      const cell = document.getElementById(`slots-cell-${idx}`);
+      if (cell) cell.classList.add('is-winning');
+    }
+  }
+  // Draw line strokes on the SVG overlay for each win.
+  const svg = document.getElementById('slots-line-overlay');
+  if (!svg) return;
+  svg.replaceChildren();
+  // viewBox is 0..300 × 0..300, grid is 3x3 → cell center coords:
+  const center = (idx) => {
+    const col = idx % 3;
+    const row = Math.floor(idx / 3);
+    return [col * 100 + 50, row * 100 + 50];
+  };
+  for (const w of wins) {
+    const pts = w.cells.map((i) => center(i));
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+    line.setAttribute('points', pts.map((p) => p.join(',')).join(' '));
+    line.setAttribute('class', 'slots-line-stroke');
+    svg.appendChild(line);
+  }
+}
+
 function finishWithError(msg) {
-  for (let i = 0; i < 3; i++) {
-    const inner = document.getElementById(`slots-reel-inner-${i}`);
-    if (inner) inner.classList.remove('is-spinning');
+  for (let i = 0; i < 9; i++) {
+    const cell = document.getElementById(`slots-cell-${i}`);
+    if (cell) cell.classList.remove('is-spinning');
   }
   if (spinAudioInstance) {
     try { spinAudioInstance.pause(); spinAudioInstance.currentTime = 0; } catch {}
     spinAudioInstance = null;
   }
-  showToast(`🚫 ${msg}`, 'error', 3500);
+  showStateOverlay('error', '🚫 Spin failed', msg);
   setLeverEnabled(true);
   spinInFlight = false;
 }
@@ -395,6 +583,6 @@ function setLeverEnabled(on) {
 }
 
 function formatNet(n) {
-  if (n > 0) return `+${n}`;
-  return String(n);
+  if (n > 0) return `+${n.toLocaleString()}`;
+  return n.toLocaleString();
 }
