@@ -145,6 +145,31 @@ export function unmute() {
 
 export function isMuted() { return muted; }
 
+// === Disco-strength pause: instantly halt ALL bg tracks (no fade) and clear
+// any in-flight fades, so club mode is uncontested. resumeActive() restarts
+// the active track after disco exits. Different from silence() because it's
+// reversible and from mute() because it actually pause()s rather than fading
+// to volume 0.
+let pausedForDisco = false;
+export function pauseAll() {
+  pausedForDisco = true;
+  for (const t of fadeTimers.values()) clearInterval(t);
+  fadeTimers.clear();
+  for (const k in tracks) {
+    try { tracks[k].volume = 0; tracks[k].pause(); } catch {}
+  }
+}
+export function resumeActive() {
+  if (!pausedForDisco) return;
+  pausedForDisco = false;
+  if (silenced || !activeKey) return;
+  const audio = tracks[activeKey];
+  if (!audio) return;
+  audio.volume = 0;
+  attemptPlay(audio);
+  fadeTo(audio, targetVolForActive(), FADE_UP_MS);
+}
+
 export function duck() {
   if (silenced || muted) return;
   duckCount += 1;

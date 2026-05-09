@@ -15,7 +15,7 @@ export const FLIGHTS = [
     airline: 'Virgin Atlantic',
     dep: { code: 'SEA', city: 'Seattle', iso: '2026-05-08T18:20:00-07:00' },
     arr: { code: 'LHR', city: 'London',  iso: '2026-05-09T12:10:00+01:00' },
-    miles: 300,
+    miles: 500,
     flightAwareUrl: 'https://flightaware.com/live/flight/VIR106',
     regions: [
       { at: 0.05, label: 'the Cascades' },
@@ -31,7 +31,7 @@ export const FLIGHTS = [
     airline: 'Virgin Atlantic',
     dep: { code: 'LHR', city: 'London',       iso: '2026-05-09T20:50:00+01:00' },
     arr: { code: 'JNB', city: 'Johannesburg', iso: '2026-05-10T08:50:00+02:00' },
-    miles: 300,
+    miles: 500,
     flightAwareUrl: 'https://flightaware.com/live/flight/VIR449',
     regions: [
       { at: 0.05, label: 'the English Channel' },
@@ -47,7 +47,7 @@ export const FLIGHTS = [
     airline: 'South African Airways',
     dep: { code: 'JNB', city: 'Johannesburg', iso: '2026-05-10T11:05:00+02:00' },
     arr: { code: 'DUR', city: 'Durban',       iso: '2026-05-10T12:15:00+02:00' },
-    miles: 300,
+    miles: 500,
     flightAwareUrl: 'https://flightaware.com/live/flight/SAA547',
     regions: [
       { at: 0.10, label: 'the Witwatersrand' },

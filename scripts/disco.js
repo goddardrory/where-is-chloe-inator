@@ -16,7 +16,7 @@
 
 import { setDiscoActive } from './audio.js';
 import { cancelAnimalese } from './animalese.js';
-import { mute as muteBg, unmute as unmuteBg } from './bg-music.js';
+import { pauseAll as pauseBg, resumeActive as resumeBg } from './bg-music.js';
 import { stopKK } from './audio.js';
 import { showToast } from './toast.js';
 
@@ -42,18 +42,21 @@ function enterDiscoMode() {
   if (active) return;
   active = true;
 
-  cancelAnimalese();
+  // Order matters: flag FIRST so any in-flight SFX guards activate before
+  // we cancel typers / pause tracks. Then kill bg + KK loop instantly (no
+  // fade — pauseBg actually pauses rather than fading to volume 0).
   setDiscoActive(true);
-  try { muteBg(); } catch {}
+  cancelAnimalese();
+  try { pauseBg(); } catch {}
   try { stopKK(); } catch {}
 
   document.body.classList.add('disco-active');
 
   // Harry plays directly through a fresh Audio element so the disco-mute
-  // guard in audio.js doesn't affect him.
+  // guard in audio.js doesn't affect him. Volume up — this is a club.
   harry = new Audio(HARRY_SRC);
   harry.loop = true;
-  harry.volume = 0.85;
+  harry.volume = 1.0;
   harry.preload = 'auto';
   const p = harry.play();
   if (p && typeof p.catch === 'function') {
@@ -84,7 +87,7 @@ function exitDiscoMode() {
   }
 
   setDiscoActive(false);
-  try { unmuteBg(); } catch {}
+  try { resumeBg(); } catch {}
   document.body.classList.remove('disco-active');
 
   showToast('🪩 House lights up. Catch you later.', 'info', 2500);
